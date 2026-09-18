@@ -56,6 +56,18 @@ namespace Wagenheimer.PackageHub.Editor
             win.CheckAllUpdates();
         }
 
+        [MenuItem("Tools/Wagenheimer/Visit wagenheimer.com ↗", priority = 300)]
+        public static void OpenWebsiteMenu()
+        {
+            Application.OpenURL("https://wagenheimer.com");
+        }
+
+        [MenuItem("Tools/Wagenheimer/GitHub Repositories ↗", priority = 301)]
+        public static void OpenGitHubMenu()
+        {
+            Application.OpenURL("https://github.com/wagenheimer");
+        }
+
         [MenuItem("Window/Wagenheimer/Package Hub", priority = 200)]
         public static void ShowWindowAlt() => ShowWindow();
 
@@ -585,7 +597,7 @@ namespace Wagenheimer.PackageHub.Editor
             GUILayout.BeginHorizontal(EditorStyles.toolbar);
             GUILayout.Space(8);
 
-            GUILayout.Label("Wagenheimer Package Hub v1.0.3", EditorStyles.miniLabel);
+            GUILayout.Label("Wagenheimer Package Hub v1.0.4", EditorStyles.miniLabel);
 
             GUILayout.Space(12);
             if (GUILayout.Button("🌐 wagenheimer.com", EditorStyles.toolbarButton))
