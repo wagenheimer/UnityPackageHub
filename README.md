@@ -34,3 +34,4 @@ Or declare it in your `Packages/manifest.json`:
 ## License
 
 MIT © Cezar Wagenheimer
+
