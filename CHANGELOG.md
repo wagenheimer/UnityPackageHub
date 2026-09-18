@@ -1,0 +1,18 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.0] - 2026-09-18
+
+### Added
+- **Unified Package Hub Window**: Modern slate UI in `Tools > Wagenheimer > Package Hub` (and `Tools > Wagenheimer > Check for Updates...`).
+- **Dynamic Package Discovery**: Automatically scans project for all `com.wagenheimer.*` packages via `UnityEditor.PackageManager.PackageInfo`.
+- **Parallel Remote Update Checker**: Concurrently polls remote GitHub repositories for latest tags, versions, and multi-version changelog diffs.
+- **Rich Multi-Version Changelogs**: Formats release notes with color-coded tags (`✦ Added`, `✔ Fixed`, `⚡ Changed`) and markdown bullet points.
+- **One-Click Package Updates & Installs**: Triggers seamless updates and installs through Unity Package Manager (`Client.Add`).
+- **Update All in Batch**: Consecutively updates all outdated Wagenheimer packages with a single click.
+- **Package Ecosystem Catalog**: Built-in discovery browser to explore and install other Wagenheimer packages into the active project.
+- **Discreet Background Auto-Checker**: Daily background check on editor startup that consolidates notifications without interrupting developer workflow.
