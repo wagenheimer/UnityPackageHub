@@ -24,6 +24,7 @@ namespace Wagenheimer.PackageHub.Editor
         private string _targetPackageFocus = null;
 
         // Visual styles
+        private GUIStyle _headerBoxStyle;
         private GUIStyle _headerStyle;
         private GUIStyle _subHeaderStyle;
         private GUIStyle _cardStyle;
@@ -42,7 +43,7 @@ namespace Wagenheimer.PackageHub.Editor
         public static void ShowWindow()
         {
             var win = GetWindow<PackageHubWindow>("Wagenheimer Hub");
-            win.minSize = new Vector2(700, 540);
+            win.minSize = new Vector2(720, 540);
             win.Show();
         }
 
@@ -50,7 +51,7 @@ namespace Wagenheimer.PackageHub.Editor
         public static void CheckForUpdatesMenu()
         {
             var win = GetWindow<PackageHubWindow>("Wagenheimer Hub");
-            win.minSize = new Vector2(700, 540);
+            win.minSize = new Vector2(720, 540);
             win.Show();
             win.CheckAllUpdates();
         }
@@ -61,7 +62,7 @@ namespace Wagenheimer.PackageHub.Editor
         public static void OpenToPackage(string packageId)
         {
             var win = GetWindow<PackageHubWindow>("Wagenheimer Hub");
-            win.minSize = new Vector2(700, 540);
+            win.minSize = new Vector2(720, 540);
             win._targetPackageFocus = packageId;
             win.Show();
             win.RefreshPackages(true);
@@ -142,63 +143,75 @@ namespace Wagenheimer.PackageHub.Editor
 
         private void DrawHeader()
         {
-            var rect = GUILayoutUtility.GetRect(position.width, 70);
-            if (_headerTex != null)
-                GUI.DrawTexture(rect, _headerTex);
+            // Top Accent Bar (Cyan/Blue)
+            var topBar = GUILayoutUtility.GetRect(position.width, 3);
+            EditorGUI.DrawRect(topBar, new Color(0.22f, 0.62f, 0.98f));
 
-            GUILayout.BeginArea(rect);
+            // Header Container
+            GUILayout.BeginVertical(_headerBoxStyle);
             GUILayout.BeginHorizontal();
-            GUILayout.Space(16);
+            GUILayout.Space(8);
 
+            // Left: Title, Subtitle, and Website Link
             GUILayout.BeginVertical();
-            GUILayout.Space(12);
-            GUILayout.Label("WAGENHEIMER PACKAGE HUB", _headerStyle);
             GUILayout.Space(2);
-            GUILayout.Label("Unified ecosystem manager • Auto-updater • Package catalog", _subHeaderStyle);
+            GUILayout.Label("WAGENHEIMER PACKAGE HUB", _headerStyle);
+            GUILayout.Space(3);
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Ecosystem Package Manager & Updater •", _subHeaderStyle);
+            if (GUILayout.Button("wagenheimer.com ↗", EditorStyles.linkLabel))
+            {
+                Application.OpenURL("https://wagenheimer.com");
+            }
+            GUILayout.EndHorizontal();
+
             GUILayout.EndVertical();
 
             GUILayout.FlexibleSpace();
 
-            // Right header badges & actions
+            // Right: Status Badges and Global Actions
             var installedCount = _allPackages.Count(p => p.IsInstalled);
             var updateCount = _allPackages.Count(p => p.IsInstalled && p.HasUpdate);
 
             GUILayout.BeginVertical();
-            GUILayout.Space(12);
             GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
 
-            // Installed count pill
+            // Installed count badge
             GUILayout.Label($"<b>{installedCount}</b> Installed", _tagStyle);
             GUILayout.Space(6);
 
-            // Update badge
+            // Update status badge
             if (updateCount > 0)
             {
-                GUI.backgroundColor = new Color(0.95f, 0.55f, 0.15f);
-                GUILayout.Label($"<b>{updateCount}</b> Updates Available", _tagStyle);
+                GUI.backgroundColor = new Color(0.98f, 0.58f, 0.16f);
+                GUILayout.Label($"⚡ <b>{updateCount}</b> Update{(updateCount > 1 ? "s" : "")} Available", _tagStyle);
                 GUI.backgroundColor = Color.white;
             }
             else
             {
-                GUI.backgroundColor = new Color(0.2f, 0.7f, 0.35f);
-                GUILayout.Label("All Up to Date", _tagStyle);
+                GUI.backgroundColor = new Color(0.22f, 0.72f, 0.38f);
+                GUILayout.Label("✓ All Up to Date", _tagStyle);
                 GUI.backgroundColor = Color.white;
             }
 
             GUILayout.EndHorizontal();
             GUILayout.Space(6);
 
-            // Quick actions
+            // Action buttons
             GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+
             GUI.enabled = !_isCheckingAll && !PackageInstaller.IsBusy;
-            if (GUILayout.Button(_isCheckingAll ? "Checking..." : "Check All Updates", EditorStyles.miniButtonLeft, GUILayout.Height(20)))
+            if (GUILayout.Button(_isCheckingAll ? "Checking..." : "🔄 Check All Updates", EditorStyles.miniButtonLeft, GUILayout.Height(22), GUILayout.Width(130)))
             {
                 CheckAllUpdates();
             }
 
             GUI.enabled = updateCount > 0 && !PackageInstaller.IsBusy;
             GUI.backgroundColor = updateCount > 0 ? new Color(0.2f, 0.75f, 0.35f) : Color.white;
-            if (GUILayout.Button("Update All", EditorStyles.miniButtonRight, GUILayout.Height(20)))
+            if (GUILayout.Button($"Update All ({updateCount})", EditorStyles.miniButtonRight, GUILayout.Height(22), GUILayout.Width(105)))
             {
                 UpdateAllOutdated();
             }
@@ -208,9 +221,9 @@ namespace Wagenheimer.PackageHub.Editor
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
 
-            GUILayout.Space(16);
+            GUILayout.Space(8);
             GUILayout.EndHorizontal();
-            GUILayout.EndArea();
+            GUILayout.EndVertical();
 
             DrawDivider();
         }
@@ -303,7 +316,7 @@ namespace Wagenheimer.PackageHub.Editor
         {
             var isFocused = !string.IsNullOrEmpty(_targetPackageFocus) && string.Equals(item.PackageId, _targetPackageFocus, StringComparison.OrdinalIgnoreCase);
 
-            GUI.backgroundColor = isFocused ? new Color(0.9f, 0.95f, 1f) : Color.white;
+            GUI.backgroundColor = isFocused ? new Color(0.85f, 0.93f, 1f) : Color.white;
             GUILayout.BeginVertical(_cardStyle);
             GUI.backgroundColor = Color.white;
 
@@ -426,7 +439,7 @@ namespace Wagenheimer.PackageHub.Editor
             var formatted = FormatReleaseNotes(notes);
 
             GUILayout.BeginVertical(EditorStyles.helpBox);
-            GUILayout.Label("<b>Release Notes:</b>", EditorStyles.miniBoldLabel);
+            GUILayout.Label("Release Notes", EditorStyles.miniBoldLabel);
             GUILayout.Space(2);
             GUILayout.Label(formatted, _richNotesStyle);
             GUILayout.EndVertical();
@@ -476,34 +489,89 @@ namespace Wagenheimer.PackageHub.Editor
         {
             GUILayout.Space(12);
 
-            GUILayout.Label("<b>Auto-Check Settings</b>", EditorStyles.boldLabel);
-            GUILayout.Space(6);
-
-            var autoCheck = EditorPrefs.GetBool(PackageHubAutoChecker.PrefAutoCheck, true);
-            var newAutoCheck = EditorGUILayout.Toggle("Check for Updates on Startup", autoCheck);
-            if (newAutoCheck != autoCheck)
+            using (new EditorGUILayout.VerticalScope(_cardStyle))
             {
-                EditorPrefs.SetBool(PackageHubAutoChecker.PrefAutoCheck, newAutoCheck);
+                GUILayout.Label("Auto-Check Settings", _cardHeaderStyle);
+                GUILayout.Space(8);
+
+                var autoCheck = EditorPrefs.GetBool(PackageHubAutoChecker.PrefAutoCheck, true);
+                GUILayout.BeginHorizontal();
+                var newAutoCheck = EditorGUILayout.Toggle(autoCheck, GUILayout.Width(20));
+                GUILayout.Label("Check for Updates on Startup (runs once daily in background)", EditorStyles.label);
+                GUILayout.EndHorizontal();
+
+                if (newAutoCheck != autoCheck)
+                {
+                    EditorPrefs.SetBool(PackageHubAutoChecker.PrefAutoCheck, newAutoCheck);
+                }
+
+                GUILayout.Space(6);
+
+                var autoOpen = EditorPrefs.GetBool(PackageHubAutoChecker.PrefAutoOpenWindow, false);
+                GUILayout.BeginHorizontal();
+                var newAutoOpen = EditorGUILayout.Toggle(autoOpen, GUILayout.Width(20));
+                GUILayout.Label("Auto-open Hub window when new updates are found", EditorStyles.label);
+                GUILayout.EndHorizontal();
+
+                if (newAutoOpen != autoOpen)
+                {
+                    EditorPrefs.SetBool(PackageHubAutoChecker.PrefAutoOpenWindow, newAutoOpen);
+                }
             }
 
-            var autoOpen = EditorPrefs.GetBool(PackageHubAutoChecker.PrefAutoOpenWindow, false);
-            var newAutoOpen = EditorGUILayout.Toggle("Auto-open Hub when updates found", autoOpen);
-            if (newAutoOpen != autoOpen)
+            GUILayout.Space(10);
+
+            using (new EditorGUILayout.VerticalScope(_cardStyle))
             {
-                EditorPrefs.SetBool(PackageHubAutoChecker.PrefAutoOpenWindow, newAutoOpen);
+                GUILayout.Label("Cache & Maintenance", _cardHeaderStyle);
+                GUILayout.Space(8);
+
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Clear Check Timestamp", GUILayout.Width(190), GUILayout.Height(24)))
+                {
+                    EditorPrefs.DeleteKey(PackageHubAutoChecker.PrefLastCheck);
+                    Debug.Log("[Wagenheimer Package Hub] Reset check schedule. Next startup will check automatically.");
+                }
+                GUILayout.Space(8);
+                GUILayout.Label("Forces auto-checker to run again on next editor launch.", EditorStyles.miniLabel);
+                GUILayout.EndHorizontal();
+
+                GUILayout.Space(6);
+
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Force Re-scan Packages", GUILayout.Width(190), GUILayout.Height(24)))
+                {
+                    RefreshPackages(true);
+                }
+                GUILayout.Space(8);
+                GUILayout.Label("Re-reads all installed UPM packages and queries GitHub.", EditorStyles.miniLabel);
+                GUILayout.EndHorizontal();
             }
 
-            GUILayout.Space(12);
-            DrawDivider();
-            GUILayout.Space(12);
+            GUILayout.Space(10);
 
-            GUILayout.Label("<b>Cache & Reset</b>", EditorStyles.boldLabel);
-            GUILayout.Space(6);
-
-            if (GUILayout.Button("Clear Last Check Date (Force check next startup)", GUILayout.Width(300)))
+            using (new EditorGUILayout.VerticalScope(_cardStyle))
             {
-                EditorPrefs.DeleteKey(PackageHubAutoChecker.PrefLastCheck);
-                Debug.Log("[Wagenheimer Package Hub] Reset check schedule. Next startup will check automatically.");
+                GUILayout.Label("About & Links", _cardHeaderStyle);
+                GUILayout.Space(8);
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Developer Website:", EditorStyles.label, GUILayout.Width(130));
+                if (GUILayout.Button("https://wagenheimer.com ↗", EditorStyles.linkLabel))
+                {
+                    Application.OpenURL("https://wagenheimer.com");
+                }
+                GUILayout.EndHorizontal();
+
+                GUILayout.Space(4);
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("GitHub Profile:", EditorStyles.label, GUILayout.Width(130));
+                if (GUILayout.Button("https://github.com/wagenheimer ↗", EditorStyles.linkLabel))
+                {
+                    Application.OpenURL("https://github.com/wagenheimer");
+                }
+                GUILayout.EndHorizontal();
             }
         }
 
@@ -513,18 +581,24 @@ namespace Wagenheimer.PackageHub.Editor
             GUILayout.BeginHorizontal(EditorStyles.toolbar);
             GUILayout.Space(8);
 
-            GUILayout.Label("Wagenheimer Package Hub v1.0.0", EditorStyles.miniLabel);
+            GUILayout.Label("Wagenheimer Package Hub v1.0.2", EditorStyles.miniLabel);
+
+            GUILayout.Space(12);
+            if (GUILayout.Button("🌐 wagenheimer.com", EditorStyles.toolbarButton))
+            {
+                Application.OpenURL("https://wagenheimer.com");
+            }
 
             GUILayout.FlexibleSpace();
-
-            if (GUILayout.Button("Package Manager", EditorStyles.toolbarButton))
-            {
-                UnityEditor.PackageManager.UI.Window.Open("");
-            }
 
             if (GUILayout.Button("GitHub", EditorStyles.toolbarButton))
             {
                 Application.OpenURL("https://github.com/wagenheimer");
+            }
+
+            if (GUILayout.Button("Package Manager", EditorStyles.toolbarButton))
+            {
+                UnityEditor.PackageManager.UI.Window.Open("");
             }
 
             GUILayout.Space(8);
@@ -542,20 +616,28 @@ namespace Wagenheimer.PackageHub.Editor
         {
             if (_headerStyle != null) return;
 
-            _headerTex = MakeTex(1, 1, new Color(0.06f, 0.09f, 0.16f)); // #0F172A slate-900
-            _cardTex = MakeTex(1, 1, EditorGUIUtility.isProSkin ? new Color(0.18f, 0.20f, 0.23f) : new Color(0.92f, 0.92f, 0.92f));
-            _dividerTex = MakeTex(1, 1, EditorGUIUtility.isProSkin ? new Color(0.25f, 0.28f, 0.32f) : new Color(0.75f, 0.75f, 0.75f));
+            _headerTex = MakeTex(1, 1, new Color(0.07f, 0.10f, 0.18f)); // #121A2E slate-900
+            _cardTex = MakeTex(1, 1, EditorGUIUtility.isProSkin ? new Color(0.18f, 0.20f, 0.24f) : new Color(0.92f, 0.92f, 0.92f));
+            _dividerTex = MakeTex(1, 1, EditorGUIUtility.isProSkin ? new Color(0.24f, 0.27f, 0.32f) : new Color(0.75f, 0.75f, 0.75f));
+
+            _headerBoxStyle = new GUIStyle(GUI.skin.box)
+            {
+                normal = { background = _headerTex },
+                padding = new RectOffset(12, 12, 8, 8),
+                margin = new RectOffset(0, 0, 0, 0)
+            };
 
             _headerStyle = new GUIStyle(EditorStyles.boldLabel)
             {
                 fontSize = 15,
+                fontStyle = FontStyle.Bold,
                 normal = { textColor = new Color(0.95f, 0.96f, 0.98f) }
             };
 
             _subHeaderStyle = new GUIStyle(EditorStyles.label)
             {
-                fontSize = 10,
-                normal = { textColor = new Color(0.55f, 0.65f, 0.75f) }
+                fontSize = 11,
+                normal = { textColor = new Color(0.60f, 0.72f, 0.84f) }
             };
 
             _cardStyle = new GUIStyle(EditorStyles.helpBox)
@@ -567,14 +649,15 @@ namespace Wagenheimer.PackageHub.Editor
             _cardHeaderStyle = new GUIStyle(EditorStyles.boldLabel)
             {
                 fontSize = 13,
+                fontStyle = FontStyle.Bold,
                 normal = { textColor = EditorGUIUtility.isProSkin ? new Color(0.95f, 0.95f, 0.98f) : new Color(0.1f, 0.1f, 0.1f) }
             };
 
             _tagStyle = new GUIStyle(EditorStyles.miniButton)
             {
                 fontSize = 9,
-                fixedHeight = 18,
-                padding = new RectOffset(6, 6, 1, 1),
+                fixedHeight = 19,
+                padding = new RectOffset(7, 7, 2, 2),
                 fontStyle = FontStyle.Bold
             };
 
@@ -622,4 +705,3 @@ namespace Wagenheimer.PackageHub.Editor
         }
     }
 }
-

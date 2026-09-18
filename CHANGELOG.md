@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-09-18
+
+### Fixed
+- Fixed header clipping and vanishing content in docked/nested window contexts by refactoring from manual area rects to structured vertical layout container.
+- Fixed `<b>` HTML tag not rendering bold in Settings tab by using dedicated styled card headers.
+- Fixed startup toggle label getting truncated in Settings tab.
+
+### Added
+- Prominent website links to `wagenheimer.com` in header subtitle and footer toolbar.
+- Dedicated "About & Links" section in Settings with direct links to `https://wagenheimer.com` and GitHub profile.
+
 ## [1.0.1] - 2026-09-18
 
 ### Fixed

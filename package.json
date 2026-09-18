@@ -1,6 +1,6 @@
 {
   "name": "com.wagenheimer.packagehub",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "displayName": "Wagenheimer Package Hub",
   "description": "Unified package manager, update checker, and ecosystem catalog for Wagenheimer Unity packages. Automatically discovers installed packages, checks for remote updates, renders rich multi-version changelogs, and enables one-click installs and updates via Unity Package Manager.",
   "unity": "2021.3",
