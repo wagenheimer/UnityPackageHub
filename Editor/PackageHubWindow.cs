@@ -150,16 +150,17 @@ namespace Wagenheimer.PackageHub.Editor
             // Header Container
             GUILayout.BeginVertical(_headerBoxStyle);
             GUILayout.BeginHorizontal();
-            GUILayout.Space(8);
+            GUILayout.Space(6);
 
             // Left: Title, Subtitle, and Website Link
             GUILayout.BeginVertical();
             GUILayout.Space(2);
             GUILayout.Label("WAGENHEIMER PACKAGE HUB", _headerStyle);
-            GUILayout.Space(3);
+            GUILayout.Space(2);
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label("Ecosystem Package Manager & Updater •", _subHeaderStyle);
+            GUILayout.Label("Ecosystem Package Manager & Updater", _subHeaderStyle);
+            GUILayout.Label("•", _subHeaderStyle, GUILayout.Width(10));
             if (GUILayout.Button("wagenheimer.com ↗", EditorStyles.linkLabel))
             {
                 Application.OpenURL("https://wagenheimer.com");
@@ -175,18 +176,20 @@ namespace Wagenheimer.PackageHub.Editor
             var updateCount = _allPackages.Count(p => p.IsInstalled && p.HasUpdate);
 
             GUILayout.BeginVertical();
+            
+            // Row 1: Badges
             GUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
 
             // Installed count badge
-            GUILayout.Label($"<b>{installedCount}</b> Installed", _tagStyle);
+            GUILayout.Label($"{installedCount} Installed", _tagStyle);
             GUILayout.Space(6);
 
             // Update status badge
             if (updateCount > 0)
             {
                 GUI.backgroundColor = new Color(0.98f, 0.58f, 0.16f);
-                GUILayout.Label($"⚡ <b>{updateCount}</b> Update{(updateCount > 1 ? "s" : "")} Available", _tagStyle);
+                GUILayout.Label($"⚡ {updateCount} Update{(updateCount > 1 ? "s" : "")} Available", _tagStyle);
                 GUI.backgroundColor = Color.white;
             }
             else
@@ -197,21 +200,21 @@ namespace Wagenheimer.PackageHub.Editor
             }
 
             GUILayout.EndHorizontal();
-            GUILayout.Space(6);
+            GUILayout.Space(5);
 
-            // Action buttons
+            // Row 2: Action buttons aligned to badges
             GUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
 
             GUI.enabled = !_isCheckingAll && !PackageInstaller.IsBusy;
-            if (GUILayout.Button(_isCheckingAll ? "Checking..." : "🔄 Check All Updates", EditorStyles.miniButtonLeft, GUILayout.Height(22), GUILayout.Width(130)))
+            if (GUILayout.Button(_isCheckingAll ? "Checking..." : "🔄 Check All Updates", EditorStyles.miniButtonLeft, GUILayout.Height(21), GUILayout.Width(130)))
             {
                 CheckAllUpdates();
             }
 
             GUI.enabled = updateCount > 0 && !PackageInstaller.IsBusy;
             GUI.backgroundColor = updateCount > 0 ? new Color(0.2f, 0.75f, 0.35f) : Color.white;
-            if (GUILayout.Button($"Update All ({updateCount})", EditorStyles.miniButtonRight, GUILayout.Height(22), GUILayout.Width(105)))
+            if (GUILayout.Button($"Update All ({updateCount})", EditorStyles.miniButtonRight, GUILayout.Height(21), GUILayout.Width(105)))
             {
                 UpdateAllOutdated();
             }
@@ -221,8 +224,9 @@ namespace Wagenheimer.PackageHub.Editor
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
 
-            GUILayout.Space(8);
+            GUILayout.Space(6);
             GUILayout.EndHorizontal();
+            GUILayout.Space(2);
             GUILayout.EndVertical();
 
             DrawDivider();
@@ -581,7 +585,7 @@ namespace Wagenheimer.PackageHub.Editor
             GUILayout.BeginHorizontal(EditorStyles.toolbar);
             GUILayout.Space(8);
 
-            GUILayout.Label("Wagenheimer Package Hub v1.0.2", EditorStyles.miniLabel);
+            GUILayout.Label("Wagenheimer Package Hub v1.0.3", EditorStyles.miniLabel);
 
             GUILayout.Space(12);
             if (GUILayout.Button("🌐 wagenheimer.com", EditorStyles.toolbarButton))
@@ -655,6 +659,7 @@ namespace Wagenheimer.PackageHub.Editor
 
             _tagStyle = new GUIStyle(EditorStyles.miniButton)
             {
+                richText = true,
                 fontSize = 9,
                 fixedHeight = 19,
                 padding = new RectOffset(7, 7, 2, 2),
@@ -663,6 +668,7 @@ namespace Wagenheimer.PackageHub.Editor
 
             _badgeUpToDate = new GUIStyle(EditorStyles.miniButton)
             {
+                richText = true,
                 fontSize = 10,
                 fixedHeight = 20,
                 padding = new RectOffset(8, 8, 2, 2),
@@ -672,6 +678,7 @@ namespace Wagenheimer.PackageHub.Editor
 
             _badgeUpdateAvailable = new GUIStyle(EditorStyles.miniButton)
             {
+                richText = true,
                 fontSize = 10,
                 fixedHeight = 20,
                 padding = new RectOffset(8, 8, 2, 2),
