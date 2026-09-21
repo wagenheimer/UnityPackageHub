@@ -39,20 +39,21 @@ namespace Wagenheimer.PackageHub.Editor
         private Texture2D _cardTex;
         private Texture2D _dividerTex;
 
+        private const float MinWindowWidth = 720f;
+        private const float MinWindowHeight = 540f;
+        private const float DefaultWindowWidth = 900f;
+        private const float DefaultWindowHeight = 620f;
+
         [MenuItem("Tools/Wagenheimer/Package Hub...", priority = 0)]
-        public static void ShowWindow()
-        {
-            var win = GetWindow<PackageHubWindow>("Wagenheimer Hub");
-            win.minSize = new Vector2(720, 540);
-            win.Show();
-        }
+        public static void ShowWindow() => OpenHub();
+
+        [MenuItem("Window/Wagenheimer/Package Hub", priority = 200)]
+        public static void ShowWindowAlt() => ShowWindow();
 
         [MenuItem("Tools/Wagenheimer/Check for Updates...", priority = 1)]
         public static void CheckForUpdatesMenu()
         {
-            var win = GetWindow<PackageHubWindow>("Wagenheimer Hub");
-            win.minSize = new Vector2(720, 540);
-            win.Show();
+            var win = OpenHub();
             win.CheckAllUpdates();
         }
 
@@ -68,21 +69,91 @@ namespace Wagenheimer.PackageHub.Editor
             Application.OpenURL("https://github.com/wagenheimer");
         }
 
-        [MenuItem("Window/Wagenheimer/Package Hub", priority = 200)]
-        public static void ShowWindowAlt() => ShowWindow();
-
         public static void OpenToPackage(string packageId)
         {
-            var win = GetWindow<PackageHubWindow>("Wagenheimer Hub");
-            win.minSize = new Vector2(720, 540);
+            var win = OpenHub();
             win._targetPackageFocus = packageId;
-            win.Show();
             win.RefreshPackages(true);
+        }
+
+        /// <summary>
+        /// Opens (or re-focuses) the Hub window and guarantees it is actually visible. Unity restores
+        /// an EditorWindow at its last position, so after a monitor change, a resolution switch or a
+        /// corrupted layout the window can come back fully off-screen: it "opens" with no error, but
+        /// the user never sees it. Every entry point goes through here so the recovery is always applied.
+        /// </summary>
+        private static PackageHubWindow OpenHub()
+        {
+            var win = GetWindow<PackageHubWindow>("Wagenheimer Hub");
+            win.minSize = new Vector2(MinWindowWidth, MinWindowHeight);
+            win.Show();
+            win.Focus();
+            EnsureWindowOnScreen(win);
+            win.Repaint();
+            return win;
+        }
+
+        /// <summary>
+        /// Re-centers the window on the main editor window when its saved rect is degenerate (never
+        /// laid out) or no longer overlaps the editor (off-screen / unplugged monitor). A docked
+        /// window always sits inside the main window, so it is left untouched.
+        /// </summary>
+        private static void EnsureWindowOnScreen(EditorWindow window)
+        {
+            Rect host;
+            try
+            {
+                host = EditorGUIUtility.GetMainWindowPosition();
+            }
+            catch
+            {
+                return; // Best-effort: never fail the open over a reposition.
+            }
+
+            if (host.width < 1f || host.height < 1f)
+                return;
+
+            var rect = window.position;
+
+            var degenerate = float.IsNaN(rect.x) || float.IsNaN(rect.y) ||
+                             float.IsInfinity(rect.x) || float.IsInfinity(rect.y) ||
+                             rect.width < 50f || rect.height < 50f;
+
+            // Require a meaningful slice of the window to sit inside the editor window.
+            const float margin = 40f;
+            var overlaps = rect.xMax > host.x + margin &&
+                           rect.yMax > host.y + margin &&
+                           rect.x < host.xMax - margin &&
+                           rect.y < host.yMax - margin;
+
+            if (!degenerate && overlaps)
+                return;
+
+            var width = degenerate ? DefaultWindowWidth : rect.width;
+            var height = degenerate ? DefaultWindowHeight : rect.height;
+
+            width = Mathf.Clamp(width, MinWindowWidth, Mathf.Max(MinWindowWidth, host.width - 40f));
+            height = Mathf.Clamp(height, MinWindowHeight, Mathf.Max(MinWindowHeight, host.height - 40f));
+
+            window.position = new Rect(
+                Mathf.Round(host.x + (host.width - width) * 0.5f),
+                Mathf.Round(host.y + (host.height - height) * 0.5f),
+                Mathf.Round(width),
+                Mathf.Round(height));
         }
 
         private void OnEnable()
         {
-            RefreshPackages(false);
+            try
+            {
+                RefreshPackages(false);
+            }
+            catch (Exception e)
+            {
+                // A discovery failure must not leave the window blank/unusable.
+                Debug.LogWarning($"[Wagenheimer Package Hub] Package discovery failed: {e.Message}");
+                _allPackages = new List<PackageItem>();
+            }
         }
 
         private void OnDisable()
@@ -597,7 +668,7 @@ namespace Wagenheimer.PackageHub.Editor
             GUILayout.BeginHorizontal(EditorStyles.toolbar);
             GUILayout.Space(8);
 
-            GUILayout.Label("Wagenheimer Package Hub v1.0.4", EditorStyles.miniLabel);
+            GUILayout.Label($"Wagenheimer Package Hub v{InstalledVersion()}", EditorStyles.miniLabel);
 
             GUILayout.Space(12);
             if (GUILayout.Button("🌐 wagenheimer.com", EditorStyles.toolbarButton))
@@ -621,6 +692,12 @@ namespace Wagenheimer.PackageHub.Editor
             GUILayout.EndHorizontal();
         }
 
+        private static string InstalledVersion()
+        {
+            var info = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(PackageHubWindow).Assembly);
+            return info?.version ?? "dev";
+        }
+
         private void DrawDivider()
         {
             var rect = GUILayoutUtility.GetRect(position.width, 1);
@@ -630,7 +707,9 @@ namespace Wagenheimer.PackageHub.Editor
 
         private void InitStyles()
         {
-            if (_headerStyle != null) return;
+            // Guard on the textures, not the styles: DestroyTextures clears the textures, so a
+            // re-enabled window rebuilds the styles instead of reusing ones bound to destroyed textures.
+            if (_headerTex != null) return;
 
             _headerTex = MakeTex(1, 1, new Color(0.07f, 0.10f, 0.18f)); // #121A2E slate-900
             _cardTex = MakeTex(1, 1, EditorGUIUtility.isProSkin ? new Color(0.18f, 0.20f, 0.24f) : new Color(0.92f, 0.92f, 0.92f));
@@ -711,13 +790,16 @@ namespace Wagenheimer.PackageHub.Editor
             if (_headerTex != null) DestroyImmediate(_headerTex);
             if (_cardTex != null) DestroyImmediate(_cardTex);
             if (_dividerTex != null) DestroyImmediate(_dividerTex);
+            _headerTex = null;
+            _cardTex = null;
+            _dividerTex = null;
         }
 
         private static Texture2D MakeTex(int width, int height, Color col)
         {
             var pix = new Color[width * height];
             for (int i = 0; i < pix.Length; i++) pix[i] = col;
-            var result = new Texture2D(width, height);
+            var result = new Texture2D(width, height) { hideFlags = HideFlags.HideAndDontSave };
             result.SetPixels(pix);
             result.Apply();
             return result;

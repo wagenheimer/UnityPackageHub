@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.5] - 2026-09-20
+
+### Fixed
+- The window could open fully off-screen after a monitor change, resolution switch or corrupted layout: it appeared to "open" with no error but was never visible. Every entry point now re-centers it on the main editor window when its saved position no longer overlaps the editor.
+- A package discovery failure on window enable no longer leaves the window blank - it is logged as a warning instead of throwing.
+- Header textures are released and nulled on disable, and the styles rebuild correctly if the window is re-enabled.
+
+### Changed
+- The footer version is read from the installed package instead of a hardcoded string.
+
 ## [1.0.4] - 2026-09-18
 
 ### Added
