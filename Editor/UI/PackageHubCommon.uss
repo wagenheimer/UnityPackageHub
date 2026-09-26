@@ -342,7 +342,6 @@
     margin-top: 4px;
     margin-bottom: 6px;
     white-space: normal;
-    line-height: 15px;
 }
 
 .hub-card-meta-row {
@@ -505,7 +504,6 @@
     font-size: 11px;
     color: #CBD5E1;
     white-space: normal;
-    line-height: 16px;
 }
 
 /* ---------------- ABOUT VIEW STYLING ---------------- */
@@ -538,7 +536,6 @@
     font-size: 12px;
     color: #CBD5E1;
     white-space: normal;
-    line-height: 17px;
     margin-bottom: 12px;
 }
 
@@ -568,7 +565,6 @@
     font-size: 11px;
     color: #94A3B8;
     white-space: normal;
-    line-height: 15px;
 }
 
 .hub-ecosystem-grid {

@@ -123,20 +123,21 @@ namespace Wagenheimer.PackageHub.Editor
             {
                 PackageId = "com.wagenheimer.cloudsave",
                 DisplayName = "Cloud Save",
-                PrimaryTitle = "Cloud Save Setup",
+                PrimaryTitle = "Cloud Save Dashboard",
                 Icon = "☁️",
                 PrimaryDashboard = new ToolShortcut
                 {
-                    Title = "Setup & Verify",
-                    MenuItemPath = "Tools/Wagenheimer/Cloud Save/Setup && Verification",
-                    TypeName = "Wagenheimer.CloudSave.Editor.CloudSaveSetupWindow",
-                    MethodName = "ShowWindow",
+                    Title = "Dashboard",
+                    MenuItemPath = "Tools/Wagenheimer/Cloud Save/Dashboard...",
+                    TypeName = "Wagenheimer.CloudSave.Editor.UI.CloudSaveHubWindow",
+                    MethodName = "Open",
                     Icon = "☁️",
                     IsPrimary = true
                 },
                 SecondaryTools = new List<ToolShortcut>
                 {
-                    new ToolShortcut { Title = "Test Window", MenuItemPath = "Tools/Wagenheimer/Cloud Save/Open Test Window", Icon = "🧪" },
+                    new ToolShortcut { Title = "Setup & Verify", MenuItemPath = "Tools/Wagenheimer/Cloud Save/Setup && Verification...", Icon = "⚙️" },
+                    new ToolShortcut { Title = "Test Window", MenuItemPath = "Tools/Wagenheimer/Cloud Save/Cloud Tester (Legacy)...", Icon = "🧪" },
                     new ToolShortcut { Title = "Audit Integration", MenuItemPath = "Tools/Wagenheimer/Cloud Save/Audit Integration", Icon = "🔍" }
                 }
             },
@@ -181,14 +182,20 @@ namespace Wagenheimer.PackageHub.Editor
             {
                 PackageId = "com.wagenheimer.nativesocial",
                 DisplayName = "Native Social",
-                PrimaryTitle = "Integration Guide",
+                PrimaryTitle = "Social Dashboard",
                 Icon = "📱",
                 PrimaryDashboard = new ToolShortcut
                 {
-                    Title = "Guide",
-                    MenuItemPath = "Tools/Wagenheimer/Native Social/Integration Guide",
+                    Title = "Dashboard",
+                    MenuItemPath = "Tools/Wagenheimer/Native Social/Dashboard...",
+                    TypeName = "Wagenheimer.NativeSocial.Editor.UI.NativeSocialHubWindow",
+                    MethodName = "Open",
                     Icon = "📱",
                     IsPrimary = true
+                },
+                SecondaryTools = new List<ToolShortcut>
+                {
+                    new ToolShortcut { Title = "Integration Guide", MenuItemPath = "Tools/Wagenheimer/Native Social/Integration Guide", Icon = "📖" }
                 }
             },
             ["com.wagenheimer.tk2dporter"] = new PackageDashboardInfo
