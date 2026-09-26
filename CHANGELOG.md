@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-09-25
+
+### Added
+- **Modern UI Toolkit Remake**: Complete redesign using Unity's UI Toolkit (Nova UI) matching the modern dark design system across UnityUtils, UnityBuildPipeline, and UnityRateControl.
+- **Automatic Dashboard Launcher**: Dedicated 1-click launcher system (`PackageDashboardLauncher`) for all installed packages. Automatically detects and opens dashboards (`UnityUtilsHubWindow`, `BuildPipelineWindow`, `RateControlHubWindow`, `IAPHelperDashboardWindow`, `CloudSaveSetupWindow`, `LevelPlaySetupWindow`, `RewiredHelperSetupWindow`, and secondary tool windows).
+- **Quick Launch Dashboards Bar**: Instant 1-click launch chips right at the top of the Installed Packages tab for immediate navigation.
+- **Dedicated "Sobre Cezar Wagenheimer & Ecosystem" Tab**: Rich developer bio, architectural philosophy (Zero Boilerplate, Commercial Battle-Tested, Modular & Decoupled, Continuous Automation), and complete interactive ecosystem catalog directory.
+- **Live Metrics Counter Bar**: Live counters for Installed in Project, Up to Date, Updates Available, and Active Dashboards Ready.
+- **Category Filter & Search Toolbar**: Fast live text search with category filter chips (Core Tools, Monetization, Build & CI, Storage & Cloud, Engagement, Input).
+
 ## [1.0.5] - 2026-09-20
 
 ### Fixed

@@ -1,48 +1,42 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Wagenheimer.PackageHub.Editor
 {
     public class PackageHubWindow : EditorWindow
     {
-        private enum Tab
+        public enum Tab
         {
-            Installed,
-            ExploreCatalog,
-            Settings
+            Installed = 0,
+            ExploreCatalog = 1,
+            About = 2,
+            Settings = 3
         }
+
+        private const string PackageJsonPath = "Packages/com.wagenheimer.packagehub/package.json";
+        private const float MinWindowWidth = 760f;
+        private const float MinWindowHeight = 560f;
+        private const float DefaultWindowWidth = 920f;
+        private const float DefaultWindowHeight = 660f;
 
         private Tab _currentTab = Tab.Installed;
         private string _searchFilter = "";
-        private Vector2 _scrollPos;
+        private string _selectedCategory = "All";
         private List<PackageItem> _allPackages = new List<PackageItem>();
         private bool _isCheckingAll = false;
         private string _targetPackageFocus = null;
+        private string _hubVersion = "1.0.5";
 
-        // Visual styles
-        private GUIStyle _headerBoxStyle;
-        private GUIStyle _headerStyle;
-        private GUIStyle _subHeaderStyle;
-        private GUIStyle _cardStyle;
-        private GUIStyle _cardHeaderStyle;
-        private GUIStyle _tagStyle;
-        private GUIStyle _badgeUpToDate;
-        private GUIStyle _badgeUpdateAvailable;
-        private GUIStyle _badgeInstalled;
-        private GUIStyle _richNotesStyle;
-
-        private Texture2D _headerTex;
-        private Texture2D _cardTex;
-        private Texture2D _dividerTex;
-
-        private const float MinWindowWidth = 720f;
-        private const float MinWindowHeight = 540f;
-        private const float DefaultWindowWidth = 900f;
-        private const float DefaultWindowHeight = 620f;
+        private VisualElement _contentContainer;
+        private Button[] _tabButtons;
+        private VisualElement _headerContainer;
+        private VisualElement _metricsContainer;
 
         [MenuItem("Tools/Wagenheimer/Package Hub...", priority = 0)]
         public static void ShowWindow() => OpenHub();
@@ -73,15 +67,10 @@ namespace Wagenheimer.PackageHub.Editor
         {
             var win = OpenHub();
             win._targetPackageFocus = packageId;
+            win._currentTab = Tab.Installed;
             win.RefreshPackages(true);
         }
 
-        /// <summary>
-        /// Opens (or re-focuses) the Hub window and guarantees it is actually visible. Unity restores
-        /// an EditorWindow at its last position, so after a monitor change, a resolution switch or a
-        /// corrupted layout the window can come back fully off-screen: it "opens" with no error, but
-        /// the user never sees it. Every entry point goes through here so the recovery is always applied.
-        /// </summary>
         private static PackageHubWindow OpenHub()
         {
             var win = GetWindow<PackageHubWindow>("Wagenheimer Hub");
@@ -89,15 +78,9 @@ namespace Wagenheimer.PackageHub.Editor
             win.Show();
             win.Focus();
             EnsureWindowOnScreen(win);
-            win.Repaint();
             return win;
         }
 
-        /// <summary>
-        /// Re-centers the window on the main editor window when its saved rect is degenerate (never
-        /// laid out) or no longer overlaps the editor (off-screen / unplugged monitor). A docked
-        /// window always sits inside the main window, so it is left untouched.
-        /// </summary>
         private static void EnsureWindowOnScreen(EditorWindow window)
         {
             Rect host;
@@ -107,7 +90,7 @@ namespace Wagenheimer.PackageHub.Editor
             }
             catch
             {
-                return; // Best-effort: never fail the open over a reposition.
+                return;
             }
 
             if (host.width < 1f || host.height < 1f)
@@ -119,7 +102,6 @@ namespace Wagenheimer.PackageHub.Editor
                              float.IsInfinity(rect.x) || float.IsInfinity(rect.y) ||
                              rect.width < 50f || rect.height < 50f;
 
-            // Require a meaningful slice of the window to sit inside the editor window.
             const float margin = 40f;
             var overlaps = rect.xMax > host.x + margin &&
                            rect.yMax > host.y + margin &&
@@ -144,207 +126,230 @@ namespace Wagenheimer.PackageHub.Editor
 
         private void OnEnable()
         {
+            LoadPackageVersion();
             try
             {
                 RefreshPackages(false);
             }
             catch (Exception e)
             {
-                // A discovery failure must not leave the window blank/unusable.
                 Debug.LogWarning($"[Wagenheimer Package Hub] Package discovery failed: {e.Message}");
                 _allPackages = new List<PackageItem>();
             }
         }
 
-        private void OnDisable()
+        private void CreateGUI()
         {
-            DestroyTextures();
-        }
+            rootVisualElement.Clear();
+            PackageHubUIStyle.Apply(rootVisualElement);
 
-        private void RefreshPackages(bool triggerRemoteCheck)
-        {
-            _allPackages = PackageDiscovery.GetAllPackages();
-            if (triggerRemoteCheck)
+            var root = new VisualElement();
+            root.AddToClassList("hub-root");
+
+            // 1. Header Banner
+            _headerContainer = new VisualElement();
+            root.Add(_headerContainer);
+            RebuildHeader();
+
+            // 2. Metrics Counter Bar
+            _metricsContainer = new VisualElement();
+            root.Add(_metricsContainer);
+            RebuildMetrics();
+
+            // 3. Tab Bar
+            var tabToolbar = new VisualElement();
+            tabToolbar.AddToClassList("hub-tab-bar");
+
+            var installedCount = _allPackages.Count(p => p.IsInstalled);
+            var catalogCount = _allPackages.Count;
+
+            var tabNames = new[]
             {
-                CheckAllUpdates();
+                $"Installed Packages ({installedCount})",
+                $"Explore Catalog ({catalogCount})",
+                "Sobre Cezar Wagenheimer & Ecosystem",
+                "Settings & Maintenance"
+            };
+
+            _tabButtons = new Button[tabNames.Length];
+            for (var i = 0; i < tabNames.Length; i++)
+            {
+                var tabIndex = (Tab)i;
+                var btn = new Button(() => SwitchTab(tabIndex))
+                {
+                    text = tabNames[i]
+                };
+                btn.AddToClassList("hub-tab-btn");
+                _tabButtons[i] = btn;
+                tabToolbar.Add(btn);
             }
+            root.Add(tabToolbar);
+
+            // 4. Dynamic Content Area
+            _contentContainer = new VisualElement();
+            _contentContainer.AddToClassList("hub-content-container");
+            root.Add(_contentContainer);
+
+            // 5. Footer
+            root.Add(BuildFooter());
+
+            rootVisualElement.Add(root);
+
+            RenderActiveTab();
         }
 
-        public void CheckAllUpdates()
+        public void SwitchTab(Tab tab)
         {
-            _isCheckingAll = true;
-            var toCheck = _allPackages.Where(p => p.IsInstalled).ToList();
-            if (toCheck.Count == 0) toCheck = _allPackages;
+            _currentTab = tab;
+            RenderActiveTab();
+        }
 
-            PackageUpdateService.CheckUpdates(toCheck, () =>
+        private void RebuildHeader()
+        {
+            if (_headerContainer == null) return;
+            _headerContainer.Clear();
+
+            var updateCount = _allPackages.Count(p => p.IsInstalled && p.HasUpdate);
+            var header = PackageHubUIStyle.CreateHeader(
+                "WAGENHEIMER PACKAGE HUB",
+                "Central Ecosystem Package Manager, Diagnostics & Dashboard Center",
+                _hubVersion,
+                CheckAllUpdates,
+                UpdateAllOutdated,
+                updateCount,
+                _isCheckingAll
+            );
+            _headerContainer.Add(header);
+        }
+
+        private void RebuildMetrics()
+        {
+            if (_metricsContainer == null) return;
+            _metricsContainer.Clear();
+
+            var installedCount = _allPackages.Count(p => p.IsInstalled);
+            var totalCount = _allPackages.Count;
+            var updateCount = _allPackages.Count(p => p.IsInstalled && p.HasUpdate);
+            var upToDateCount = installedCount - updateCount;
+            var dashboards = PackageDashboardLauncher.GetInstalledDashboards(_allPackages);
+
+            var row = new VisualElement();
+            row.AddToClassList("hub-metrics-row");
+
+            // Installed card
+            row.Add(PackageHubUIStyle.CreateMetricCard("Installed in Project", $"{installedCount} / {totalCount}", out var instVal));
+            instVal.style.color = new StyleColor(new Color(0.22f, 0.74f, 0.97f)); // #38BDF8
+
+            // Up to Date card
+            row.Add(PackageHubUIStyle.CreateMetricCard("Up to Date", upToDateCount.ToString(), out var upVal));
+            upVal.style.color = new StyleColor(new Color(0.10f, 0.73f, 0.51f)); // #10B981
+
+            // Updates Available card
+            row.Add(PackageHubUIStyle.CreateMetricCard("Updates Available", updateCount.ToString(), out var upAvailVal));
+            if (updateCount > 0)
+                upAvailVal.style.color = new StyleColor(new Color(0.96f, 0.62f, 0.04f)); // #F59E0B
+            else
+                upAvailVal.style.color = new StyleColor(new Color(0.58f, 0.64f, 0.72f));
+
+            // Dashboards Ready card
+            row.Add(PackageHubUIStyle.CreateMetricCard("Dashboards Ready", $"{dashboards.Count} Active", out var dashVal));
+            dashVal.style.color = new StyleColor(new Color(0.65f, 0.55f, 0.98f)); // #A78BFA
+
+            _metricsContainer.Add(row);
+        }
+
+        private void RenderActiveTab()
+        {
+            if (_contentContainer == null) return;
+            _contentContainer.Clear();
+
+            // Update tab button highlights
+            if (_tabButtons != null)
             {
-                _isCheckingAll = false;
-                Repaint();
-            });
-        }
+                var installedCount = _allPackages.Count(p => p.IsInstalled);
+                var catalogCount = _allPackages.Count;
 
-        private void UpdateAllOutdated()
-        {
-            var outdated = _allPackages.Where(p => p.IsInstalled && p.HasUpdate).ToList();
-            if (outdated.Count == 0) return;
+                _tabButtons[0].text = $"Installed Packages ({installedCount})";
+                _tabButtons[1].text = $"Explore Catalog ({catalogCount})";
 
-            PackageInstaller.UpdateAll(outdated, () =>
-            {
-                RefreshPackages(false);
-                Repaint();
-            });
-        }
-
-        private void OnGUI()
-        {
-            InitStyles();
-
-            DrawHeader();
-            DrawTabBar();
-
-            GUILayout.BeginVertical(EditorStyles.inspectorDefaultMargins);
-            _scrollPos = GUILayout.BeginScrollView(_scrollPos);
+                for (var i = 0; i < _tabButtons.Length; i++)
+                {
+                    if (i == (int)_currentTab)
+                        _tabButtons[i].AddToClassList("hub-tab-btn--active");
+                    else
+                        _tabButtons[i].RemoveFromClassList("hub-tab-btn--active");
+                }
+            }
 
             switch (_currentTab)
             {
                 case Tab.Installed:
-                    DrawInstalledTab();
+                    _contentContainer.Add(BuildInstalledView());
                     break;
                 case Tab.ExploreCatalog:
-                    DrawCatalogTab();
+                    _contentContainer.Add(BuildCatalogView());
+                    break;
+                case Tab.About:
+                    _contentContainer.Add(BuildAboutView());
                     break;
                 case Tab.Settings:
-                    DrawSettingsTab();
+                    _contentContainer.Add(BuildSettingsView());
                     break;
             }
-
-            GUILayout.EndScrollView();
-            GUILayout.EndVertical();
-
-            DrawFooter();
         }
 
-        private void DrawHeader()
+        #region Tab 0: Installed Packages View
+
+        private VisualElement BuildInstalledView()
         {
-            // Top Accent Bar (Cyan/Blue)
-            var topBar = GUILayoutUtility.GetRect(position.width, 3);
-            EditorGUI.DrawRect(topBar, new Color(0.22f, 0.62f, 0.98f));
+            var container = new VisualElement();
+            container.style.flexGrow = 1;
 
-            // Header Container
-            GUILayout.BeginVertical(_headerBoxStyle);
-            GUILayout.BeginHorizontal();
-            GUILayout.Space(6);
-
-            // Left: Title, Subtitle, and Website Link
-            GUILayout.BeginVertical();
-            GUILayout.Space(2);
-            GUILayout.Label("WAGENHEIMER PACKAGE HUB", _headerStyle);
-            GUILayout.Space(2);
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Ecosystem Package Manager & Updater", _subHeaderStyle);
-            GUILayout.Label("•", _subHeaderStyle, GUILayout.Width(10));
-            if (GUILayout.Button("wagenheimer.com ↗", EditorStyles.linkLabel))
+            // 1. Quick Launch Dashboards Bar
+            var dashboards = PackageDashboardLauncher.GetInstalledDashboards(_allPackages);
+            if (dashboards.Count > 0)
             {
-                Application.OpenURL("https://wagenheimer.com");
-            }
-            GUILayout.EndHorizontal();
+                var quickBar = new VisualElement();
+                quickBar.AddToClassList("hub-quickbar");
 
-            GUILayout.EndVertical();
+                var qHeader = new VisualElement();
+                qHeader.AddToClassList("hub-quickbar-header");
 
-            GUILayout.FlexibleSpace();
+                var qTitle = new Label("⚡ QUICK LAUNCH DASHBOARDS — INSTANT 1-CLICK ACCESS");
+                qTitle.AddToClassList("hub-quickbar-title");
+                qHeader.Add(qTitle);
 
-            // Right: Status Badges and Global Actions
-            var installedCount = _allPackages.Count(p => p.IsInstalled);
-            var updateCount = _allPackages.Count(p => p.IsInstalled && p.HasUpdate);
+                var qCountBadge = PackageHubUIStyle.CreateBadge($"{dashboards.Count} Available", "hub-badge-info");
+                qHeader.Add(qCountBadge);
+                quickBar.Add(qHeader);
 
-            GUILayout.BeginVertical();
-            
-            // Row 1: Badges
-            GUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
+                var chipRow = new VisualElement();
+                chipRow.AddToClassList("hub-quickbar-chips");
 
-            // Installed count badge
-            GUILayout.Label($"{installedCount} Installed", _tagStyle);
-            GUILayout.Space(6);
+                foreach (var dash in dashboards)
+                {
+                    var chip = new Button(() =>
+                    {
+                        PackageDashboardLauncher.Launch(dash.PrimaryDashboard);
+                    })
+                    {
+                        text = $"{dash.Icon}  {dash.DisplayName}"
+                    };
+                    chip.AddToClassList("hub-chip-btn");
+                    chip.tooltip = $"Open {dash.PrimaryTitle} ({dash.PrimaryDashboard.MenuItemPath})";
+                    chipRow.Add(chip);
+                }
 
-            // Update status badge
-            if (updateCount > 0)
-            {
-                GUI.backgroundColor = new Color(0.98f, 0.58f, 0.16f);
-                GUILayout.Label($"⚡ {updateCount} Update{(updateCount > 1 ? "s" : "")} Available", _tagStyle);
-                GUI.backgroundColor = Color.white;
-            }
-            else
-            {
-                GUI.backgroundColor = new Color(0.22f, 0.72f, 0.38f);
-                GUILayout.Label("✓ All Up to Date", _tagStyle);
-                GUI.backgroundColor = Color.white;
+                quickBar.Add(chipRow);
+                container.Add(quickBar);
             }
 
-            GUILayout.EndHorizontal();
-            GUILayout.Space(5);
+            // 2. Search & Filter Bar
+            container.Add(BuildSearchFilterBar(isInstalledTab: true));
 
-            // Row 2: Action buttons aligned to badges
-            GUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
-
-            GUI.enabled = !_isCheckingAll && !PackageInstaller.IsBusy;
-            if (GUILayout.Button(_isCheckingAll ? "Checking..." : "🔄 Check All Updates", EditorStyles.miniButtonLeft, GUILayout.Height(21), GUILayout.Width(130)))
-            {
-                CheckAllUpdates();
-            }
-
-            GUI.enabled = updateCount > 0 && !PackageInstaller.IsBusy;
-            GUI.backgroundColor = updateCount > 0 ? new Color(0.2f, 0.75f, 0.35f) : Color.white;
-            if (GUILayout.Button($"Update All ({updateCount})", EditorStyles.miniButtonRight, GUILayout.Height(21), GUILayout.Width(105)))
-            {
-                UpdateAllOutdated();
-            }
-            GUI.backgroundColor = Color.white;
-            GUI.enabled = true;
-
-            GUILayout.EndHorizontal();
-            GUILayout.EndVertical();
-
-            GUILayout.Space(6);
-            GUILayout.EndHorizontal();
-            GUILayout.Space(2);
-            GUILayout.EndVertical();
-
-            DrawDivider();
-        }
-
-        private void DrawTabBar()
-        {
-            GUILayout.BeginHorizontal(EditorStyles.toolbar);
-
-            if (GUILayout.Toggle(_currentTab == Tab.Installed, $"Installed Packages ({_allPackages.Count(p => p.IsInstalled)})", EditorStyles.toolbarButton))
-                _currentTab = Tab.Installed;
-
-            if (GUILayout.Toggle(_currentTab == Tab.ExploreCatalog, $"Explore Catalog ({_allPackages.Count})", EditorStyles.toolbarButton))
-                _currentTab = Tab.ExploreCatalog;
-
-            if (GUILayout.Toggle(_currentTab == Tab.Settings, "Settings", EditorStyles.toolbarButton))
-                _currentTab = Tab.Settings;
-
-            GUILayout.FlexibleSpace();
-
-            // Search bar
-            GUILayout.Label("Search:", EditorStyles.miniLabel);
-            _searchFilter = EditorGUILayout.TextField(_searchFilter, EditorStyles.toolbarSearchField, GUILayout.Width(180));
-            if (!string.IsNullOrEmpty(_searchFilter) && GUILayout.Button("", GUI.skin.FindStyle("ToolbarSearchCancelButton") ?? EditorStyles.miniButton))
-            {
-                _searchFilter = "";
-                GUI.FocusControl(null);
-            }
-
-            GUILayout.EndHorizontal();
-        }
-
-        private void DrawInstalledTab()
-        {
-            GUILayout.Space(8);
+            // 3. Scrollable List of Packages
+            var scroll = new ScrollView();
+            scroll.style.flexGrow = 1;
 
             var installed = _allPackages.Where(p => p.IsInstalled).ToList();
 
@@ -357,26 +362,51 @@ namespace Wagenheimer.PackageHub.Editor
                 ).ToList();
             }
 
+            if (_selectedCategory != "All")
+            {
+                installed = installed.Where(p => string.Equals(p.Category, _selectedCategory, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+
             if (installed.Count == 0)
             {
-                GUILayout.Space(30);
-                EditorGUILayout.HelpBox("No Wagenheimer packages found in this project matching the filter.", MessageType.Info);
-                return;
+                var emptyCard = new VisualElement();
+                emptyCard.AddToClassList("hub-card");
+                var emptyLbl = new Label("No installed Wagenheimer packages match your search filter.");
+                emptyLbl.style.color = new StyleColor(new Color(0.6f, 0.65f, 0.72f));
+                emptyLbl.style.paddingTop = 15;
+                emptyLbl.style.paddingBottom = 15;
+                emptyLbl.style.unityTextAlign = TextAnchor.MiddleCenter;
+                emptyCard.Add(emptyLbl);
+                scroll.Add(emptyCard);
             }
-
-            // Put packages with updates first
-            var ordered = installed.OrderByDescending(p => p.HasUpdate).ThenBy(p => p.DisplayName);
-
-            foreach (var item in ordered)
+            else
             {
-                DrawPackageCard(item, true);
-                GUILayout.Space(8);
+                // Put packages with updates first, then alphabetical
+                var ordered = installed.OrderByDescending(p => p.HasUpdate).ThenBy(p => p.DisplayName);
+                foreach (var item in ordered)
+                {
+                    scroll.Add(BuildPackageCard(item, isInstalledTab: true));
+                }
             }
+
+            container.Add(scroll);
+            return container;
         }
 
-        private void DrawCatalogTab()
+        #endregion
+
+        #region Tab 1: Explore Catalog View
+
+        private VisualElement BuildCatalogView()
         {
-            GUILayout.Space(8);
+            var container = new VisualElement();
+            container.style.flexGrow = 1;
+
+            // Search & Filter Bar
+            container.Add(BuildSearchFilterBar(isInstalledTab: false));
+
+            var scroll = new ScrollView();
+            scroll.style.flexGrow = 1;
 
             var list = _allPackages.AsEnumerable();
 
@@ -390,146 +420,284 @@ namespace Wagenheimer.PackageHub.Editor
                 );
             }
 
+            if (_selectedCategory != "All")
+            {
+                list = list.Where(p => string.Equals(p.Category, _selectedCategory, StringComparison.OrdinalIgnoreCase));
+            }
+
             var ordered = list.OrderBy(p => p.IsInstalled).ThenBy(p => p.Category).ThenBy(p => p.DisplayName);
 
             foreach (var item in ordered)
             {
-                DrawPackageCard(item, false);
-                GUILayout.Space(8);
+                scroll.Add(BuildPackageCard(item, isInstalledTab: false));
             }
+
+            container.Add(scroll);
+            return container;
         }
 
-        private void DrawPackageCard(PackageItem item, bool isInstalledTab)
+        #endregion
+
+        #region Search & Category Filter Component
+
+        private VisualElement BuildSearchFilterBar(bool isInstalledTab)
         {
-            var isFocused = !string.IsNullOrEmpty(_targetPackageFocus) && string.Equals(item.PackageId, _targetPackageFocus, StringComparison.OrdinalIgnoreCase);
+            var bar = new VisualElement();
+            bar.AddToClassList("hub-search-toolbar");
 
-            GUI.backgroundColor = isFocused ? new Color(0.85f, 0.93f, 1f) : Color.white;
-            GUILayout.BeginVertical(_cardStyle);
-            GUI.backgroundColor = Color.white;
+            var searchField = new TextField { value = _searchFilter };
+            searchField.AddToClassList("hub-search-field");
+            searchField.RegisterValueChangedCallback(evt =>
+            {
+                _searchFilter = evt.newValue;
+                RenderActiveTab();
+            });
+            bar.Add(searchField);
 
-            // Header line
-            GUILayout.BeginHorizontal();
+            var chipRow = new VisualElement();
+            chipRow.AddToClassList("hub-filter-chips");
 
-            // Name and category
-            GUILayout.Label(item.DisplayName, _cardHeaderStyle);
-            GUILayout.Space(6);
-            GUILayout.Label(item.Category, _tagStyle);
+            var categories = new[] { "All", "Core Tools", "Monetization", "Build & CI", "Storage & Cloud", "Engagement", "Input" };
+            foreach (var cat in categories)
+            {
+                var isSelected = string.Equals(_selectedCategory, cat, StringComparison.OrdinalIgnoreCase);
+                var chip = new Button(() =>
+                {
+                    _selectedCategory = cat;
+                    RenderActiveTab();
+                })
+                {
+                    text = cat
+                };
+                chip.AddToClassList("hub-filter-chip");
+                if (isSelected)
+                {
+                    chip.AddToClassList("hub-filter-chip--active");
+                }
+                chipRow.Add(chip);
+            }
 
-            GUILayout.FlexibleSpace();
+            bar.Add(chipRow);
+            return bar;
+        }
 
-            // Status badges
+        #endregion
+
+        #region Package Card Builder (with Dashboard shortcuts & Actions)
+
+        private VisualElement BuildPackageCard(PackageItem item, bool isInstalledTab)
+        {
+            var isFocused = !string.IsNullOrEmpty(_targetPackageFocus) &&
+                            string.Equals(item.PackageId, _targetPackageFocus, StringComparison.OrdinalIgnoreCase);
+
+            var card = new VisualElement();
+            card.AddToClassList("hub-card");
+            if (isFocused) card.AddToClassList("hub-card--focused");
+
+            // Top Header: Name, Category, Badges, and Main Actions
+            var header = new VisualElement();
+            header.AddToClassList("hub-card-header");
+
+            var identity = new VisualElement();
+            identity.AddToClassList("hub-card-identity");
+
+            var titleLbl = new Label(item.DisplayName);
+            titleLbl.AddToClassList("hub-card-title");
+            identity.Add(titleLbl);
+
+            var catBadge = new Label(item.Category);
+            catBadge.AddToClassList("hub-card-category");
+            identity.Add(catBadge);
+
+            header.Add(identity);
+
+            // Badges row
+            var badgesRow = new VisualElement();
+            badgesRow.AddToClassList("hub-card-badges");
+
             if (item.IsUpdating)
             {
-                GUI.backgroundColor = new Color(0.2f, 0.6f, 0.9f);
-                GUILayout.Label("INSTALLING...", _tagStyle);
-                GUI.backgroundColor = Color.white;
+                badgesRow.Add(PackageHubUIStyle.CreateBadge("INSTALLING...", "hub-badge-info"));
             }
             else if (item.IsChecking)
             {
-                GUILayout.Label("Checking...", EditorStyles.miniLabel);
+                badgesRow.Add(PackageHubUIStyle.CreateBadge("Checking...", "hub-badge-neutral"));
             }
             else if (item.IsInstalled)
             {
                 if (item.HasUpdate)
                 {
-                    GUILayout.Label($"UPDATE: v{item.InstalledVersion} ➔ v{item.LatestRemoteVersion}", _badgeUpdateAvailable);
+                    var upBadge = PackageHubUIStyle.CreateBadge($"UPDATE: v{item.InstalledVersion} ➔ v{item.LatestRemoteVersion}", "hub-badge-update");
+                    badgesRow.Add(upBadge);
                 }
                 else
                 {
-                    GUILayout.Label($"v{item.InstalledVersion} (Latest)", _badgeUpToDate);
+                    var upBadge = PackageHubUIStyle.CreateBadge($"v{item.InstalledVersion} (Latest)", "hub-badge-pass");
+                    badgesRow.Add(upBadge);
                 }
             }
             else
             {
-                GUILayout.Label("Available", _tagStyle);
+                badgesRow.Add(PackageHubUIStyle.CreateBadge("Available", "hub-badge-neutral"));
             }
 
-            // Action buttons
-            GUILayout.Space(8);
+            header.Add(badgesRow);
+            card.Add(header);
+
+            // Description
+            var desc = new Label(item.Description);
+            desc.AddToClassList("hub-card-desc");
+            card.Add(desc);
+
+            // Meta Row with Dashboard shortcuts, actions, and Package ID
+            var metaRow = new VisualElement();
+            metaRow.AddToClassList("hub-card-meta-row");
+
+            var leftMeta = new VisualElement();
+            leftMeta.style.flexDirection = FlexDirection.Column;
+
+            var idLabel = new Label(item.PackageId);
+            idLabel.AddToClassList("hub-card-id");
+            leftMeta.Add(idLabel);
+
+            // DASHBOARD SHORTCUTS FOR INSTALLED PACKAGE
+            var dashInfo = PackageDashboardLauncher.GetDashboardInfo(item.PackageId);
+            if (item.IsInstalled && dashInfo != null)
+            {
+                var shortcutsRow = new VisualElement();
+                shortcutsRow.AddToClassList("hub-shortcuts-row");
+                shortcutsRow.style.marginTop = 4;
+
+                // Primary Dashboard Button
+                if (dashInfo.PrimaryDashboard != null)
+                {
+                    var dashBtn = PackageHubUIStyle.CreateButton(
+                        $"⚡ Open {dashInfo.PrimaryTitle}",
+                        "hub-btn-dashboard",
+                        () =>
+                        {
+                            PackageDashboardLauncher.Launch(dashInfo.PrimaryDashboard, item.RepoUrl);
+                        }
+                    );
+                    dashBtn.AddToClassList("hub-btn-sm");
+                    dashBtn.tooltip = $"Launch {dashInfo.PrimaryTitle} ({dashInfo.PrimaryDashboard.MenuItemPath})";
+                    shortcutsRow.Add(dashBtn);
+                }
+
+                // Secondary tool buttons
+                foreach (var sec in dashInfo.SecondaryTools)
+                {
+                    var secBtn = PackageHubUIStyle.CreateButton(
+                        $"{sec.Icon} {sec.Title}",
+                        "hub-btn-secondary",
+                        () =>
+                        {
+                            PackageDashboardLauncher.Launch(sec, item.RepoUrl);
+                        }
+                    );
+                    secBtn.AddToClassList("hub-btn-sm");
+                    secBtn.tooltip = $"Open {sec.Title} ({sec.MenuItemPath})";
+                    shortcutsRow.Add(secBtn);
+                }
+
+                leftMeta.Add(shortcutsRow);
+            }
+
+            metaRow.Add(leftMeta);
+
+            // Right Actions: Install / Update, Changelog, GitHub
+            var actions = new VisualElement();
+            actions.AddToClassList("hub-card-actions");
 
             if (item.IsInstalled)
             {
                 if (item.HasUpdate)
                 {
-                    GUI.backgroundColor = new Color(0.2f, 0.75f, 0.35f);
-                    GUI.enabled = !PackageInstaller.IsBusy;
-                    if (GUILayout.Button($"Update to v{item.LatestRemoteVersion}", GUILayout.Height(22), GUILayout.Width(130)))
-                    {
-                        PackageInstaller.InstallOrUpdate(item, item.LatestRemoteVersion, (success, err) =>
+                    var updateBtn = PackageHubUIStyle.CreateButton(
+                        $"Update to v{item.LatestRemoteVersion}",
+                        "hub-btn-success",
+                        () =>
                         {
-                            RefreshPackages(false);
-                            Repaint();
-                        });
-                    }
-                    GUI.enabled = true;
-                    GUI.backgroundColor = Color.white;
+                            PackageInstaller.InstallOrUpdate(item, item.LatestRemoteVersion, (success, err) =>
+                            {
+                                RefreshPackages(false);
+                                RebuildHeader();
+                                RebuildMetrics();
+                                RenderActiveTab();
+                            });
+                        }
+                    );
+                    updateBtn.SetEnabled(!PackageInstaller.IsBusy);
+                    actions.Add(updateBtn);
                 }
             }
             else
             {
-                GUI.backgroundColor = new Color(0.2f, 0.6f, 0.9f);
-                GUI.enabled = !PackageInstaller.IsBusy;
-                if (GUILayout.Button("Install to Project", GUILayout.Height(22), GUILayout.Width(120)))
-                {
-                    PackageInstaller.InstallOrUpdate(item, null, (success, err) =>
+                var installBtn = PackageHubUIStyle.CreateButton(
+                    "Install to Project",
+                    "hub-btn-primary",
+                    () =>
                     {
-                        RefreshPackages(false);
-                        Repaint();
-                    });
-                }
-                GUI.enabled = true;
-                GUI.backgroundColor = Color.white;
+                        PackageInstaller.InstallOrUpdate(item, null, (success, err) =>
+                        {
+                            RefreshPackages(false);
+                            RebuildHeader();
+                            RebuildMetrics();
+                            RenderActiveTab();
+                        });
+                    }
+                );
+                installBtn.SetEnabled(!PackageInstaller.IsBusy);
+                actions.Add(installBtn);
             }
 
-            // Changelog toggle
+            // Release Notes Toggle
             if (!string.IsNullOrEmpty(item.ReleaseNotes))
             {
-                var icon = item.ExpandedNotes ? "▼ Notes" : "▶ Notes";
-                if (GUILayout.Button(icon, EditorStyles.miniButton, GUILayout.Width(64), GUILayout.Height(22)))
+                var notesBtn = PackageHubUIStyle.CreateButton(
+                    item.ExpandedNotes ? "▼ Notes" : "▶ Notes",
+                    "hub-btn-secondary",
+                    () =>
+                    {
+                        item.ExpandedNotes = !item.ExpandedNotes;
+                        RenderActiveTab();
+                    }
+                );
+                actions.Add(notesBtn);
+            }
+
+            // GitHub Button
+            var ghBtn = PackageHubUIStyle.CreateButton(
+                "GitHub ↗",
+                "hub-btn-secondary",
+                () =>
                 {
-                    item.ExpandedNotes = !item.ExpandedNotes;
+                    Application.OpenURL(item.RepoUrl);
                 }
-            }
+            );
+            actions.Add(ghBtn);
 
-            // GitHub link
-            if (GUILayout.Button("GitHub", EditorStyles.miniButton, GUILayout.Width(54), GUILayout.Height(22)))
-            {
-                Application.OpenURL(item.RepoUrl);
-            }
+            metaRow.Add(actions);
+            card.Add(metaRow);
 
-            GUILayout.EndHorizontal();
-
-            // Package ID and description
-            GUILayout.Space(2);
-            GUILayout.Label(item.PackageId, EditorStyles.miniBoldLabel);
-            GUILayout.Label(item.Description, EditorStyles.wordWrappedLabel);
-
-            // Error display
-            if (!string.IsNullOrEmpty(item.UpdateError))
-            {
-                GUILayout.Space(4);
-                EditorGUILayout.HelpBox($"Update error: {item.UpdateError}", MessageType.Error);
-            }
-
-            // Release Notes accordion
+            // Inline Release Notes Container
             if (item.ExpandedNotes && !string.IsNullOrEmpty(item.ReleaseNotes))
             {
-                GUILayout.Space(6);
-                DrawReleaseNotes(item.ReleaseNotes);
+                var notesContainer = new VisualElement();
+                notesContainer.AddToClassList("hub-notes-container");
+
+                var notesHeader = new Label($"Release Notes for v{item.LatestRemoteVersion ?? item.InstalledVersion}");
+                notesHeader.AddToClassList("hub-notes-header");
+                notesContainer.Add(notesHeader);
+
+                var notesText = new Label(FormatReleaseNotes(item.ReleaseNotes));
+                notesText.AddToClassList("hub-notes-text");
+                notesContainer.Add(notesText);
+
+                card.Add(notesContainer);
             }
 
-            GUILayout.EndVertical();
-        }
-
-        private void DrawReleaseNotes(string notes)
-        {
-            var formatted = FormatReleaseNotes(notes);
-
-            GUILayout.BeginVertical(EditorStyles.helpBox);
-            GUILayout.Label("Release Notes", EditorStyles.miniBoldLabel);
-            GUILayout.Space(2);
-            GUILayout.Label(formatted, _richNotesStyle);
-            GUILayout.EndVertical();
+            return card;
         }
 
         private string FormatReleaseNotes(string markdown)
@@ -545,264 +713,408 @@ namespace Wagenheimer.PackageHub.Editor
                 var trimmed = line.Trim();
 
                 if (trimmed.StartsWith("### Added") || trimmed.StartsWith("#### Added"))
-                    result.AppendLine("<color=#4ADE80><b>✦ Added</b></color>");
+                    result.AppendLine("✦ Added:");
                 else if (trimmed.StartsWith("### Fixed") || trimmed.StartsWith("#### Fixed"))
-                    result.AppendLine("<color=#60A5FA><b>✔ Fixed</b></color>");
+                    result.AppendLine("✔ Fixed:");
                 else if (trimmed.StartsWith("### Changed") || trimmed.StartsWith("#### Changed"))
-                    result.AppendLine("<color=#F59E0B><b>⚡ Changed</b></color>");
+                    result.AppendLine("⚡ Changed:");
                 else if (trimmed.StartsWith("###") || trimmed.StartsWith("##"))
-                    result.AppendLine($"<b>{trimmed.TrimStart('#').Trim()}</b>");
+                    result.AppendLine($"• {trimmed.TrimStart('#').Trim()}");
                 else if (trimmed.StartsWith("- ") || trimmed.StartsWith("* "))
-                {
-                    var content = trimmed.Substring(2);
-                    content = Regex.Replace(content, @"\*\*(.*?)\*\*", "<b>$1</b>");
-                    result.AppendLine($"  • {content}");
-                }
+                    result.AppendLine($"  - {trimmed.Substring(2)}");
                 else if (!string.IsNullOrWhiteSpace(line))
-                {
-                    var content = Regex.Replace(line, @"\*\*(.*?)\*\*", "<b>$1</b>");
-                    result.AppendLine(content);
-                }
+                    result.AppendLine(line);
                 else
-                {
                     result.AppendLine();
-                }
             }
 
             return result.ToString().Trim();
         }
 
-        private void DrawSettingsTab()
+        #endregion
+
+        #region Tab 2: Sobre Cezar Wagenheimer & Ecosystem
+
+        private VisualElement BuildAboutView()
         {
-            GUILayout.Space(12);
+            var scroll = new ScrollView();
+            scroll.style.flexGrow = 1;
 
-            using (new EditorGUILayout.VerticalScope(_cardStyle))
-            {
-                GUILayout.Label("Auto-Check Settings", _cardHeaderStyle);
-                GUILayout.Space(8);
+            // 1. Hero Bio Card
+            var hero = new VisualElement();
+            hero.AddToClassList("hub-about-hero");
 
-                var autoCheck = EditorPrefs.GetBool(PackageHubAutoChecker.PrefAutoCheck, true);
-                GUILayout.BeginHorizontal();
-                var newAutoCheck = EditorGUILayout.Toggle(autoCheck, GUILayout.Width(20));
-                GUILayout.Label("Check for Updates on Startup (runs once daily in background)", EditorStyles.label);
-                GUILayout.EndHorizontal();
+            var heroTitle = new Label("Cezar Wagenheimer");
+            heroTitle.AddToClassList("hub-hero-title");
+            hero.Add(heroTitle);
 
-                if (newAutoCheck != autoCheck)
-                {
-                    EditorPrefs.SetBool(PackageHubAutoChecker.PrefAutoCheck, newAutoCheck);
-                }
+            var heroSubtitle = new Label("Lead Game Developer • Tools & Engine Systems Architect • Open-Source Maintainer");
+            heroSubtitle.AddToClassList("hub-hero-subtitle");
+            hero.Add(heroSubtitle);
 
-                GUILayout.Space(6);
+            var bioText = new Label(
+                "Passionate game software engineer with extensive experience developing commercial cross-platform titles, " +
+                "designing high-throughput CI/CD build automation, and engineering zero-friction Unity packages. " +
+                "The Wagenheimer Unity Suite powers production-grade commercial games with clean code, robust architectural patterns, " +
+                "and modern UI Toolkit developer workflows."
+            );
+            bioText.AddToClassList("hub-hero-bio");
+            hero.Add(bioText);
 
-                var autoOpen = EditorPrefs.GetBool(PackageHubAutoChecker.PrefAutoOpenWindow, false);
-                GUILayout.BeginHorizontal();
-                var newAutoOpen = EditorGUILayout.Toggle(autoOpen, GUILayout.Width(20));
-                GUILayout.Label("Auto-open Hub window when new updates are found", EditorStyles.label);
-                GUILayout.EndHorizontal();
+            // Social & Contact links
+            var socials = new VisualElement();
+            socials.AddToClassList("hub-hero-socials");
 
-                if (newAutoOpen != autoOpen)
-                {
-                    EditorPrefs.SetBool(PackageHubAutoChecker.PrefAutoOpenWindow, newAutoOpen);
-                }
-            }
-
-            GUILayout.Space(10);
-
-            using (new EditorGUILayout.VerticalScope(_cardStyle))
-            {
-                GUILayout.Label("Cache & Maintenance", _cardHeaderStyle);
-                GUILayout.Space(8);
-
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Clear Check Timestamp", GUILayout.Width(190), GUILayout.Height(24)))
-                {
-                    EditorPrefs.DeleteKey(PackageHubAutoChecker.PrefLastCheck);
-                    Debug.Log("[Wagenheimer Package Hub] Reset check schedule. Next startup will check automatically.");
-                }
-                GUILayout.Space(8);
-                GUILayout.Label("Forces auto-checker to run again on next editor launch.", EditorStyles.miniLabel);
-                GUILayout.EndHorizontal();
-
-                GUILayout.Space(6);
-
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Force Re-scan Packages", GUILayout.Width(190), GUILayout.Height(24)))
-                {
-                    RefreshPackages(true);
-                }
-                GUILayout.Space(8);
-                GUILayout.Label("Re-reads all installed UPM packages and queries GitHub.", EditorStyles.miniLabel);
-                GUILayout.EndHorizontal();
-            }
-
-            GUILayout.Space(10);
-
-            using (new EditorGUILayout.VerticalScope(_cardStyle))
-            {
-                GUILayout.Label("About & Links", _cardHeaderStyle);
-                GUILayout.Space(8);
-
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("Developer Website:", EditorStyles.label, GUILayout.Width(130));
-                if (GUILayout.Button("https://wagenheimer.com ↗", EditorStyles.linkLabel))
-                {
-                    Application.OpenURL("https://wagenheimer.com");
-                }
-                GUILayout.EndHorizontal();
-
-                GUILayout.Space(4);
-
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("GitHub Profile:", EditorStyles.label, GUILayout.Width(130));
-                if (GUILayout.Button("https://github.com/wagenheimer ↗", EditorStyles.linkLabel))
-                {
-                    Application.OpenURL("https://github.com/wagenheimer");
-                }
-                GUILayout.EndHorizontal();
-            }
-        }
-
-        private void DrawFooter()
-        {
-            DrawDivider();
-            GUILayout.BeginHorizontal(EditorStyles.toolbar);
-            GUILayout.Space(8);
-
-            GUILayout.Label($"Wagenheimer Package Hub v{InstalledVersion()}", EditorStyles.miniLabel);
-
-            GUILayout.Space(12);
-            if (GUILayout.Button("🌐 wagenheimer.com", EditorStyles.toolbarButton))
+            socials.Add(PackageHubUIStyle.CreateButton("🌐 Official Website (wagenheimer.com)", "hub-btn-primary", () =>
             {
                 Application.OpenURL("https://wagenheimer.com");
-            }
+            }));
 
-            GUILayout.FlexibleSpace();
-
-            if (GUILayout.Button("GitHub", EditorStyles.toolbarButton))
+            socials.Add(PackageHubUIStyle.CreateButton("🐙 GitHub (@wagenheimer)", "hub-btn-secondary", () =>
             {
                 Application.OpenURL("https://github.com/wagenheimer");
+            }));
+
+            socials.Add(PackageHubUIStyle.CreateButton("💼 LinkedIn Profile", "hub-btn-secondary", () =>
+            {
+                Application.OpenURL("https://www.linkedin.com/in/cezar-wagenheimer/");
+            }));
+
+            socials.Add(PackageHubUIStyle.CreateButton("✉️ Contact & Support", "hub-btn-secondary", () =>
+            {
+                Application.OpenURL("mailto:cezar@wagenheimer.com");
+            }));
+
+            hero.Add(socials);
+            scroll.Add(hero);
+
+            // 2. Architectural Principles Card
+            var principlesHeader = new Label("Engineering Philosophy & Principles");
+            principlesHeader.AddToClassList("hub-card-title");
+            principlesHeader.style.marginBottom = 8;
+            principlesHeader.style.marginTop = 6;
+            scroll.Add(principlesHeader);
+
+            scroll.Add(BuildPrincipleItem(
+                "⚡ Zero-Boilerplate & Frictionless Setup",
+                "Every package in the suite is designed to initialize and configure itself out of the box with intelligent defaults. No tedious XML/JSON editing or fragile boilerplate code."
+            ));
+
+            scroll.Add(BuildPrincipleItem(
+                "🛡️ Commercial Battle-Tested",
+                "Proven in live-ops commercial titles with millions of downloads across Steam, Google Play, Apple App Store, and macOS. Engineered to handle memory constraints and multi-platform nuances."
+            ));
+
+            scroll.Add(BuildPrincipleItem(
+                "🧩 Decoupled & Modular Architecture",
+                "Zero forced monolithic dependencies. Each package fulfills one responsibility with precision. Use only what your game requires, whether it is CloudSave, RateControl, or BuildPipeline."
+            ));
+
+            scroll.Add(BuildPrincipleItem(
+                "🔄 Continuous Automation & SemVer",
+                "Enforces Conventional Commits (feat, fix, refactor), automated CHANGELOG extraction, GitHub-backed UPM delivery, and non-intrusive background update discovery."
+            ));
+
+            // 3. Full Ecosystem Directory Grid
+            var ecoHeader = new Label("The Wagenheimer Unity Ecosystem");
+            ecoHeader.AddToClassList("hub-card-title");
+            ecoHeader.style.marginBottom = 8;
+            ecoHeader.style.marginTop = 12;
+            scroll.Add(ecoHeader);
+
+            var grid = new VisualElement();
+            grid.AddToClassList("hub-ecosystem-grid");
+
+            foreach (var pkg in PackageCatalog.KnownPackages)
+            {
+                var isInst = _allPackages.Any(p => p.IsInstalled && string.Equals(p.PackageId, pkg.PackageId, StringComparison.OrdinalIgnoreCase));
+                var cell = new VisualElement();
+                cell.AddToClassList("hub-ecosystem-cell");
+
+                var topCell = new VisualElement();
+                topCell.style.flexDirection = FlexDirection.Row;
+                topCell.style.justifyContent = Justify.SpaceBetween;
+                topCell.style.alignItems = Align.Center;
+
+                var nameLbl = new Label(pkg.DisplayName);
+                nameLbl.style.fontSize = 12;
+                nameLbl.style.unityFontStyleAndWeight = FontStyle.Bold;
+                topCell.Add(nameLbl);
+
+                var stBadge = PackageHubUIStyle.CreateBadge(
+                    isInst ? "INSTALLED" : "AVAILABLE",
+                    isInst ? "hub-badge-pass" : "hub-badge-neutral"
+                );
+                topCell.Add(stBadge);
+                cell.Add(topCell);
+
+                var dLbl = new Label(pkg.Description);
+                dLbl.style.fontSize = 10.5f;
+                dLbl.style.color = new StyleColor(new Color(0.6f, 0.65f, 0.72f));
+                dLbl.style.marginTop = 4;
+                dLbl.style.whiteSpace = WhiteSpace.Normal;
+                cell.Add(dLbl);
+
+                var cellFooter = new VisualElement();
+                cellFooter.style.flexDirection = FlexDirection.Row;
+                cellFooter.style.justifyContent = Justify.SpaceBetween;
+                cellFooter.style.alignItems = Align.Center;
+                cellFooter.style.marginTop = 6;
+
+                var catLbl = new Label(pkg.Category);
+                catLbl.style.fontSize = 9.5f;
+                catLbl.style.color = new StyleColor(new Color(0.22f, 0.74f, 0.97f));
+                cellFooter.Add(catLbl);
+
+                var ghLink = new Label("Repo ↗");
+                ghLink.style.fontSize = 10;
+                ghLink.style.color = new StyleColor(new Color(0.5f, 0.7f, 1f));
+                ghLink.RegisterCallback<ClickEvent>(_ => Application.OpenURL(pkg.RepoUrl));
+                cellFooter.Add(ghLink);
+
+                cell.Add(cellFooter);
+                grid.Add(cell);
             }
 
-            if (GUILayout.Button("Package Manager", EditorStyles.toolbarButton))
+            scroll.Add(grid);
+
+            return scroll;
+        }
+
+        private VisualElement BuildPrincipleItem(string title, string description)
+        {
+            var card = new VisualElement();
+            card.AddToClassList("hub-principle-card");
+
+            var t = new Label(title);
+            t.AddToClassList("hub-principle-title");
+            card.Add(t);
+
+            var d = new Label(description);
+            d.AddToClassList("hub-principle-desc");
+            card.Add(d);
+
+            return card;
+        }
+
+        #endregion
+
+        #region Tab 3: Settings & Maintenance View
+
+        private VisualElement BuildSettingsView()
+        {
+            var scroll = new ScrollView();
+            scroll.style.flexGrow = 1;
+
+            // Auto-check settings card
+            var autoCard = new VisualElement();
+            autoCard.AddToClassList("hub-card");
+
+            var autoTitle = new Label("Automated Background Checks");
+            autoTitle.AddToClassList("hub-card-title");
+            autoCard.Add(autoTitle);
+
+            var autoCheck = EditorPrefs.GetBool(PackageHubAutoChecker.PrefAutoCheck, true);
+            var checkToggle = new Toggle("Check for Package Updates on Editor Startup (runs once daily in background)")
+            {
+                value = autoCheck
+            };
+            checkToggle.RegisterValueChangedCallback(evt =>
+            {
+                EditorPrefs.SetBool(PackageHubAutoChecker.PrefAutoCheck, evt.newValue);
+            });
+            checkToggle.style.marginTop = 8;
+            autoCard.Add(checkToggle);
+
+            var autoOpen = EditorPrefs.GetBool(PackageHubAutoChecker.PrefAutoOpenWindow, false);
+            var openToggle = new Toggle("Automatically open Hub window when new package updates are discovered")
+            {
+                value = autoOpen
+            };
+            openToggle.RegisterValueChangedCallback(evt =>
+            {
+                EditorPrefs.SetBool(PackageHubAutoChecker.PrefAutoOpenWindow, evt.newValue);
+            });
+            openToggle.style.marginTop = 6;
+            autoCard.Add(openToggle);
+
+            scroll.Add(autoCard);
+
+            // Cache & Maintenance card
+            var cacheCard = new VisualElement();
+            cacheCard.AddToClassList("hub-card");
+
+            var cacheTitle = new Label("Cache & Package Operations");
+            cacheTitle.AddToClassList("hub-card-title");
+            cacheCard.Add(cacheTitle);
+
+            var cacheActions = new VisualElement();
+            cacheActions.style.flexDirection = FlexDirection.Row;
+            cacheActions.style.marginTop = 8;
+
+            cacheActions.Add(PackageHubUIStyle.CreateButton("Force Re-scan Packages", "hub-btn-secondary", () =>
+            {
+                RefreshPackages(true);
+                RebuildHeader();
+                RebuildMetrics();
+                RenderActiveTab();
+            }));
+
+            cacheActions.Add(PackageHubUIStyle.CreateButton("Clear Check Schedule Timestamp", "hub-btn-secondary", () =>
+            {
+                EditorPrefs.DeleteKey(PackageHubAutoChecker.PrefLastCheck);
+                Debug.Log("[Wagenheimer Package Hub] Reset check schedule. Next startup will check automatically.");
+            }));
+
+            cacheActions.Add(PackageHubUIStyle.CreateButton("Open Unity Package Manager", "hub-btn-secondary", () =>
             {
                 UnityEditor.PackageManager.UI.Window.Open("");
+            }));
+
+            cacheCard.Add(cacheActions);
+            scroll.Add(cacheCard);
+
+            // Package Information
+            var infoCard = new VisualElement();
+            infoCard.AddToClassList("hub-card");
+
+            var infoTitle = new Label("Package Hub Architecture");
+            infoTitle.AddToClassList("hub-card-title");
+            infoCard.Add(infoTitle);
+
+            AddInfoRow(infoCard, "Package Name", "com.wagenheimer.packagehub");
+            AddInfoRow(infoCard, "Installed Version", _hubVersion);
+            AddInfoRow(infoCard, "Author", "Cezar Wagenheimer");
+            AddInfoRow(infoCard, "License", "MIT");
+            AddInfoRow(infoCard, "GitHub Repository", "https://github.com/wagenheimer/UnityPackageHub");
+
+            scroll.Add(infoCard);
+
+            return scroll;
+        }
+
+        private static void AddInfoRow(VisualElement container, string label, string value)
+        {
+            var row = new VisualElement();
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.justifyContent = Justify.SpaceBetween;
+            row.style.paddingTop = 4;
+            row.style.paddingBottom = 4;
+
+            var labelElem = new Label(label);
+            labelElem.style.color = new StyleColor(new Color(0.6f, 0.65f, 0.72f));
+            labelElem.style.fontSize = 11;
+
+            var valElem = new Label(value);
+            valElem.style.fontSize = 11;
+            valElem.style.unityFontStyleAndWeight = FontStyle.Bold;
+
+            row.Add(labelElem);
+            row.Add(valElem);
+            container.Add(row);
+        }
+
+        #endregion
+
+        #region Footer Component
+
+        private VisualElement BuildFooter()
+        {
+            var footer = new VisualElement();
+            footer.AddToClassList("hub-footer");
+
+            var left = new Label($"Wagenheimer Package Hub v{_hubVersion} • Built with Unity UI Toolkit");
+            left.AddToClassList("hub-footer-text");
+            footer.Add(left);
+
+            var links = new VisualElement();
+            links.AddToClassList("hub-footer-links");
+
+            links.Add(PackageHubUIStyle.CreateButton("🌐 wagenheimer.com", "hub-btn-secondary hub-btn-sm", () =>
+            {
+                Application.OpenURL("https://wagenheimer.com");
+            }));
+
+            links.Add(PackageHubUIStyle.CreateButton("GitHub ↗", "hub-btn-secondary hub-btn-sm", () =>
+            {
+                Application.OpenURL("https://github.com/wagenheimer");
+            }));
+
+            links.Add(PackageHubUIStyle.CreateButton("Unity UPM", "hub-btn-secondary hub-btn-sm", () =>
+            {
+                UnityEditor.PackageManager.UI.Window.Open("");
+            }));
+
+            footer.Add(links);
+            return footer;
+        }
+
+        #endregion
+
+        #region Operations & Updates
+
+        public void CheckAllUpdates()
+        {
+            _isCheckingAll = true;
+            RebuildHeader();
+
+            var toCheck = _allPackages.Where(p => p.IsInstalled).ToList();
+            if (toCheck.Count == 0) toCheck = _allPackages;
+
+            PackageUpdateService.CheckUpdates(toCheck, () =>
+            {
+                _isCheckingAll = false;
+                RebuildHeader();
+                RebuildMetrics();
+                RenderActiveTab();
+            });
+        }
+
+        private void UpdateAllOutdated()
+        {
+            var outdated = _allPackages.Where(p => p.IsInstalled && p.HasUpdate).ToList();
+            if (outdated.Count == 0) return;
+
+            PackageInstaller.UpdateAll(outdated, () =>
+            {
+                RefreshPackages(false);
+                RebuildHeader();
+                RebuildMetrics();
+                RenderActiveTab();
+            });
+        }
+
+        private void RefreshPackages(bool triggerRemoteCheck)
+        {
+            _allPackages = PackageDiscovery.GetAllPackages();
+            if (triggerRemoteCheck)
+            {
+                CheckAllUpdates();
             }
-
-            GUILayout.Space(8);
-            GUILayout.EndHorizontal();
         }
 
-        private static string InstalledVersion()
+        private void LoadPackageVersion()
         {
-            var info = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(PackageHubWindow).Assembly);
-            return info?.version ?? "dev";
+            try
+            {
+                if (File.Exists(PackageJsonPath))
+                {
+                    var json = File.ReadAllText(PackageJsonPath);
+                    var match = Regex.Match(json, "\"version\"\\s*:\\s*\"([^\"]+)\"");
+                    if (match.Success)
+                    {
+                        _hubVersion = match.Groups[1].Value;
+                        return;
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore, use fallback
+            }
+            _hubVersion = "1.1.0";
         }
 
-        private void DrawDivider()
-        {
-            var rect = GUILayoutUtility.GetRect(position.width, 1);
-            if (_dividerTex != null)
-                GUI.DrawTexture(rect, _dividerTex);
-        }
-
-        private void InitStyles()
-        {
-            // Guard on the textures, not the styles: DestroyTextures clears the textures, so a
-            // re-enabled window rebuilds the styles instead of reusing ones bound to destroyed textures.
-            if (_headerTex != null) return;
-
-            _headerTex = MakeTex(1, 1, new Color(0.07f, 0.10f, 0.18f)); // #121A2E slate-900
-            _cardTex = MakeTex(1, 1, EditorGUIUtility.isProSkin ? new Color(0.18f, 0.20f, 0.24f) : new Color(0.92f, 0.92f, 0.92f));
-            _dividerTex = MakeTex(1, 1, EditorGUIUtility.isProSkin ? new Color(0.24f, 0.27f, 0.32f) : new Color(0.75f, 0.75f, 0.75f));
-
-            _headerBoxStyle = new GUIStyle(GUI.skin.box)
-            {
-                normal = { background = _headerTex },
-                padding = new RectOffset(12, 12, 8, 8),
-                margin = new RectOffset(0, 0, 0, 0)
-            };
-
-            _headerStyle = new GUIStyle(EditorStyles.boldLabel)
-            {
-                fontSize = 15,
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = new Color(0.95f, 0.96f, 0.98f) }
-            };
-
-            _subHeaderStyle = new GUIStyle(EditorStyles.label)
-            {
-                fontSize = 11,
-                normal = { textColor = new Color(0.60f, 0.72f, 0.84f) }
-            };
-
-            _cardStyle = new GUIStyle(EditorStyles.helpBox)
-            {
-                padding = new RectOffset(12, 12, 10, 10),
-                margin = new RectOffset(0, 0, 4, 4)
-            };
-
-            _cardHeaderStyle = new GUIStyle(EditorStyles.boldLabel)
-            {
-                fontSize = 13,
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = EditorGUIUtility.isProSkin ? new Color(0.95f, 0.95f, 0.98f) : new Color(0.1f, 0.1f, 0.1f) }
-            };
-
-            _tagStyle = new GUIStyle(EditorStyles.miniButton)
-            {
-                richText = true,
-                fontSize = 9,
-                fixedHeight = 19,
-                padding = new RectOffset(7, 7, 2, 2),
-                fontStyle = FontStyle.Bold
-            };
-
-            _badgeUpToDate = new GUIStyle(EditorStyles.miniButton)
-            {
-                richText = true,
-                fontSize = 10,
-                fixedHeight = 20,
-                padding = new RectOffset(8, 8, 2, 2),
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = new Color(0.2f, 0.8f, 0.35f) }
-            };
-
-            _badgeUpdateAvailable = new GUIStyle(EditorStyles.miniButton)
-            {
-                richText = true,
-                fontSize = 10,
-                fixedHeight = 20,
-                padding = new RectOffset(8, 8, 2, 2),
-                fontStyle = FontStyle.Bold,
-                normal = { textColor = new Color(0.98f, 0.6f, 0.15f) }
-            };
-
-            _richNotesStyle = new GUIStyle(EditorStyles.wordWrappedLabel)
-            {
-                richText = true,
-                fontSize = 11,
-                padding = new RectOffset(6, 6, 4, 4)
-            };
-        }
-
-        private void DestroyTextures()
-        {
-            if (_headerTex != null) DestroyImmediate(_headerTex);
-            if (_cardTex != null) DestroyImmediate(_cardTex);
-            if (_dividerTex != null) DestroyImmediate(_dividerTex);
-            _headerTex = null;
-            _cardTex = null;
-            _dividerTex = null;
-        }
-
-        private static Texture2D MakeTex(int width, int height, Color col)
-        {
-            var pix = new Color[width * height];
-            for (int i = 0; i < pix.Length; i++) pix[i] = col;
-            var result = new Texture2D(width, height) { hideFlags = HideFlags.HideAndDontSave };
-            result.SetPixels(pix);
-            result.Apply();
-            return result;
-        }
+        #endregion
     }
 }
