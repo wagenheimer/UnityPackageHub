@@ -5,13 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-09-25
+
+### Added
+- **Relative Release Timestamps**: Package cards now display human-readable release recency badges (e.g. `1 day 2 hours ago`, `2 hours ago`, `3 days ago`) parsed directly from local package changelogs, filesystem metadata, and remote GitHub commit APIs.
+- **Clock Recency Badge**: Polished `🕒 {relTime}` pill badge seamlessly styled into each package card's header row.
+
+### Fixed
+- **Metric Cards Overlap Resolved**: Enforced fixed `height: 58px`, `flexDirection = FlexDirection.Column`, `flexShrink = 0`, and explicit vertical alignment across both inline C# styles and USS, completely preventing counter values and labels from collapsing or overlapping at any window size.
+- **100% English Compliance**: Replaced all remaining Portuguese headers and copy (`"Sobre Cezar Wagenheimer & Ecosystem"`, README author profile) with fluent, professional English.
+- **Responsive README Table**: Streamlined 4-column tooling matrix table that prevents horizontal overflow on GitHub and markdown viewports.
+
 ## [1.1.0] - 2026-09-25
 
 ### Added
 - **Modern UI Toolkit Remake**: Complete redesign using Unity's UI Toolkit (Nova UI) matching the modern dark design system across UnityUtils, UnityBuildPipeline, and UnityRateControl.
 - **Automatic Dashboard Launcher**: Dedicated 1-click launcher system (`PackageDashboardLauncher`) for all installed packages. Automatically detects and opens dashboards (`UnityUtilsHubWindow`, `BuildPipelineWindow`, `RateControlHubWindow`, `IAPHelperDashboardWindow`, `CloudSaveSetupWindow`, `LevelPlaySetupWindow`, `RewiredHelperSetupWindow`, and secondary tool windows).
 - **Quick Launch Dashboards Bar**: Instant 1-click launch chips right at the top of the Installed Packages tab for immediate navigation.
-- **Dedicated "Sobre Cezar Wagenheimer & Ecosystem" Tab**: Rich developer bio, architectural philosophy (Zero Boilerplate, Commercial Battle-Tested, Modular & Decoupled, Continuous Automation), and complete interactive ecosystem catalog directory.
+- **Dedicated "About Cezar Wagenheimer & Ecosystem" Tab**: Rich developer bio, architectural philosophy (Zero Boilerplate, Commercial Battle-Tested, Modular & Decoupled, Continuous Automation), and complete interactive ecosystem catalog directory.
 - **Live Metrics Counter Bar**: Live counters for Installed in Project, Up to Date, Updates Available, and Active Dashboards Ready.
 - **Category Filter & Search Toolbar**: Fast live text search with category filter chips (Core Tools, Monetization, Build & CI, Storage & Cloud, Engagement, Input).
 

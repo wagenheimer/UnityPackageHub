@@ -153,18 +153,27 @@
 /* ---------------- METRICS BAR ---------------- */
 .hub-metrics-row {
     flex-direction: row;
+    flex-shrink: 0;
+    min-height: 58px;
+    height: 58px;
     margin-bottom: 12px;
 }
 
 .hub-metric-card {
     flex-grow: 1;
+    flex-basis: 0;
+    flex-shrink: 0;
+    min-height: 58px;
+    height: 58px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     background-color: #1A1D26;
     border-color: #2D3342;
     border-width: 1px;
     border-radius: 7px;
-    padding: 10px 12px;
+    padding: 6px 10px;
     margin-right: 8px;
-    align-items: center;
 }
 
 .hub-metric-card:last-child {
@@ -172,15 +181,18 @@
 }
 
 .hub-metric-value {
-    font-size: 20px;
+    font-size: 18px;
     -unity-font-style: bold;
     color: #FFFFFF;
+    height: 22px;
+    -unity-text-align: middle-center;
 }
 
 .hub-metric-label {
-    font-size: 10px;
+    font-size: 10.5px;
     color: #94A3B8;
     margin-top: 2px;
+    height: 14px;
     -unity-text-align: middle-center;
 }
 
@@ -481,6 +493,13 @@
     background-color: #242938;
     border-color: #384256;
     color: #94A3B8;
+}
+
+.hub-badge-time {
+    background-color: rgba(148, 163, 184, 0.12);
+    border-color: rgba(148, 163, 184, 0.3);
+    color: #94A3B8;
+    font-size: 9.5px;
 }
 
 /* ---------------- RELEASE NOTES ACCORDION ---------------- */

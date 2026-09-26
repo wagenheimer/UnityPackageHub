@@ -55,8 +55,22 @@ namespace Wagenheimer.PackageHub.Editor
 
                                 if (item.HasUpdate)
                                 {
-                                    // Fetch Changelog
+                                    // Fetch Changelog and commit date
                                     FetchChangelog(item, () =>
+                                    {
+                                        FetchLatestCommitDate(item, () =>
+                                        {
+                                            item.IsChecking = false;
+                                            remaining--;
+                                            if (remaining <= 0) onComplete?.Invoke();
+                                        });
+                                    });
+                                    req.Dispose();
+                                    return;
+                                }
+                                else
+                                {
+                                    FetchLatestCommitDate(item, () =>
                                     {
                                         item.IsChecking = false;
                                         remaining--;
@@ -91,6 +105,7 @@ namespace Wagenheimer.PackageHub.Editor
         {
             var url = item.GetRawChangelogUrl();
             var req = UnityWebRequest.Get(url);
+            req.timeout = 5;
             var op = req.SendWebRequest();
 
             op.completed += _ =>
@@ -99,12 +114,65 @@ namespace Wagenheimer.PackageHub.Editor
                 {
                     if (req.result == UnityWebRequest.Result.Success && !string.IsNullOrEmpty(req.downloadHandler?.text))
                     {
-                        item.ReleaseNotes = ExtractVersionNotes(req.downloadHandler.text, item.LatestRemoteVersion, item.InstalledVersion);
+                        var text = req.downloadHandler.text;
+                        item.ReleaseNotes = ExtractVersionNotes(text, item.LatestRemoteVersion, item.InstalledVersion);
+                        var dt = ExtractChangelogDate(text);
+                        if (dt.HasValue)
+                        {
+                            item.ReleaseDate = dt.Value;
+                            item.ReleaseDateString = dt.Value.ToString("yyyy-MM-dd");
+                        }
                     }
                 }
                 catch
                 {
                     // Silent changelog fail
+                }
+                finally
+                {
+                    req.Dispose();
+                    onDone?.Invoke();
+                }
+            };
+        }
+
+        public static DateTimeOffset? ExtractChangelogDate(string changelog)
+        {
+            if (string.IsNullOrEmpty(changelog)) return null;
+            var match = System.Text.RegularExpressions.Regex.Match(changelog, @"##\s*\[?v?[\d\.]+\]?\s*[-–—]\s*(\d{4}-\d{2}-\d{2})");
+            if (match.Success && DateTimeOffset.TryParse(match.Groups[1].Value, out var dt))
+            {
+                return dt;
+            }
+            return null;
+        }
+
+        public static void FetchLatestCommitDate(PackageItem item, Action onDone = null)
+        {
+            var url = item.GetRepoApiCommitsUrl();
+            var req = UnityWebRequest.Get(url);
+            req.SetRequestHeader("User-Agent", "UnityPackageHub");
+            req.timeout = 5;
+            var op = req.SendWebRequest();
+
+            op.completed += _ =>
+            {
+                try
+                {
+                    if (req.result == UnityWebRequest.Result.Success && !string.IsNullOrEmpty(req.downloadHandler?.text))
+                    {
+                        var text = req.downloadHandler.text;
+                        var match = System.Text.RegularExpressions.Regex.Match(text, @"""date""\s*:\s*""([^""]+)""");
+                        if (match.Success && DateTimeOffset.TryParse(match.Groups[1].Value, out var dt))
+                        {
+                            item.ReleaseDate = dt;
+                            item.ReleaseDateString = dt.ToString("yyyy-MM-ddTHH:mm:ssZ");
+                        }
+                    }
+                }
+                catch
+                {
+                    // Fallback to changelog date
                 }
                 finally
                 {

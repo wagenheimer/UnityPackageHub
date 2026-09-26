@@ -24,6 +24,58 @@ namespace Wagenheimer.PackageHub.Editor
         public bool IsUpdating;
         public string UpdateError;
         public bool ExpandedNotes;
+        public DateTimeOffset? ReleaseDate;
+        public string ReleaseDateString;
+
+        public string GetRelativeReleaseTime()
+        {
+            if (!ReleaseDate.HasValue)
+            {
+                if (!string.IsNullOrEmpty(ReleaseDateString) && DateTimeOffset.TryParse(ReleaseDateString, out var parsed))
+                {
+                    ReleaseDate = parsed;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+
+            var span = DateTimeOffset.UtcNow - ReleaseDate.Value;
+            if (span.TotalSeconds < 0) return "just now";
+            if (span.TotalMinutes < 1) return "just now";
+            if (span.TotalMinutes < 60)
+            {
+                var mins = (int)span.TotalMinutes;
+                return mins == 1 ? "1 min ago" : $"{mins} mins ago";
+            }
+            if (span.TotalHours < 24)
+            {
+                var hours = (int)span.TotalHours;
+                var mins = span.Minutes;
+                if (hours == 1) return mins > 0 ? $"1 hour {mins}m ago" : "1 hour ago";
+                return mins > 0 ? $"{hours} hours {mins}m ago" : $"{hours} hours ago";
+            }
+            if (span.TotalDays < 30)
+            {
+                var days = (int)span.TotalDays;
+                var hours = span.Hours;
+                var dayStr = days == 1 ? "1 day" : $"{days} days";
+                if (hours > 0)
+                {
+                    var hourStr = hours == 1 ? "1 hour" : $"{hours} hours";
+                    return $"{dayStr} {hourStr} ago";
+                }
+                return $"{dayStr} ago";
+            }
+            if (span.TotalDays < 365)
+            {
+                var months = (int)(span.TotalDays / 30);
+                return months == 1 ? "1 month ago" : $"{months} months ago";
+            }
+            var years = (int)(span.TotalDays / 365);
+            return years == 1 ? "1 year ago" : $"{years} years ago";
+        }
 
         public string GetRawPackageJsonUrl()
         {
@@ -37,6 +89,13 @@ namespace Wagenheimer.PackageHub.Editor
             var branch = string.IsNullOrEmpty(DefaultBranch) ? "main" : DefaultBranch;
             var repoName = RepoUrl.Substring(RepoUrl.LastIndexOf('/') + 1);
             return $"https://raw.githubusercontent.com/wagenheimer/{repoName}/{branch}/CHANGELOG.md";
+        }
+
+        public string GetRepoApiCommitsUrl()
+        {
+            var branch = string.IsNullOrEmpty(DefaultBranch) ? "main" : DefaultBranch;
+            var repoName = RepoUrl.Substring(RepoUrl.LastIndexOf('/') + 1);
+            return $"https://api.github.com/repos/wagenheimer/{repoName}/commits?sha={branch}&per_page=1";
         }
     }
 
@@ -52,7 +111,8 @@ namespace Wagenheimer.PackageHub.Editor
                 RepoUrl = "https://github.com/wagenheimer/UnityPackageHub",
                 GitUrl = "https://github.com/wagenheimer/UnityPackageHub.git",
                 DefaultBranch = "main",
-                Category = "Core Tools"
+                Category = "Core Tools",
+                ReleaseDateString = "2026-09-25T21:30:00Z"
             },
             new PackageItem
             {
@@ -62,7 +122,8 @@ namespace Wagenheimer.PackageHub.Editor
                 RepoUrl = "https://github.com/wagenheimer/UnityBuildPipeline",
                 GitUrl = "https://github.com/wagenheimer/UnityBuildPipeline.git",
                 DefaultBranch = "master",
-                Category = "Build & CI"
+                Category = "Build & CI",
+                ReleaseDateString = "2026-09-25T18:00:00Z"
             },
             new PackageItem
             {
@@ -72,7 +133,8 @@ namespace Wagenheimer.PackageHub.Editor
                 RepoUrl = "https://github.com/wagenheimer/UnityIAPHelper",
                 GitUrl = "https://github.com/wagenheimer/UnityIAPHelper.git",
                 DefaultBranch = "main",
-                Category = "Monetization"
+                Category = "Monetization",
+                ReleaseDateString = "2026-09-24T12:00:00Z"
             },
             new PackageItem
             {
@@ -82,7 +144,8 @@ namespace Wagenheimer.PackageHub.Editor
                 RepoUrl = "https://github.com/wagenheimer/UnityRateControl",
                 GitUrl = "https://github.com/wagenheimer/UnityRateControl.git",
                 DefaultBranch = "master",
-                Category = "Engagement"
+                Category = "Engagement",
+                ReleaseDateString = "2026-09-25T18:00:00Z"
             },
             new PackageItem
             {
@@ -92,7 +155,8 @@ namespace Wagenheimer.PackageHub.Editor
                 RepoUrl = "https://github.com/wagenheimer/UnityCloudSave",
                 GitUrl = "https://github.com/wagenheimer/UnityCloudSave.git",
                 DefaultBranch = "main",
-                Category = "Storage & Cloud"
+                Category = "Storage & Cloud",
+                ReleaseDateString = "2026-09-25T21:40:00Z"
             },
             new PackageItem
             {
@@ -102,7 +166,8 @@ namespace Wagenheimer.PackageHub.Editor
                 RepoUrl = "https://github.com/wagenheimer/UnityLevelPlayHelper",
                 GitUrl = "https://github.com/wagenheimer/UnityLevelPlayHelper.git",
                 DefaultBranch = "master",
-                Category = "Monetization"
+                Category = "Monetization",
+                ReleaseDateString = "2026-09-24T12:00:00Z"
             },
             new PackageItem
             {
@@ -112,7 +177,8 @@ namespace Wagenheimer.PackageHub.Editor
                 RepoUrl = "https://github.com/wagenheimer/UnityNativeSocial",
                 GitUrl = "https://github.com/wagenheimer/UnityNativeSocial.git",
                 DefaultBranch = "master",
-                Category = "Engagement"
+                Category = "Engagement",
+                ReleaseDateString = "2026-09-25T21:40:00Z"
             },
             new PackageItem
             {
@@ -122,7 +188,8 @@ namespace Wagenheimer.PackageHub.Editor
                 RepoUrl = "https://github.com/wagenheimer/RewiredHelper",
                 GitUrl = "https://github.com/wagenheimer/RewiredHelper.git",
                 DefaultBranch = "main",
-                Category = "Input"
+                Category = "Input",
+                ReleaseDateString = "2026-09-22T10:00:00Z"
             },
             new PackageItem
             {
@@ -132,7 +199,8 @@ namespace Wagenheimer.PackageHub.Editor
                 RepoUrl = "https://github.com/wagenheimer/UnityUtils",
                 GitUrl = "https://github.com/wagenheimer/UnityUtils.git",
                 DefaultBranch = "master",
-                Category = "Core Tools"
+                Category = "Core Tools",
+                ReleaseDateString = "2026-09-25T18:00:00Z"
             },
             new PackageItem
             {
@@ -142,7 +210,8 @@ namespace Wagenheimer.PackageHub.Editor
                 RepoUrl = "https://github.com/wagenheimer/UnityTimelineTypewriter",
                 GitUrl = "https://github.com/wagenheimer/UnityTimelineTypewriter.git",
                 DefaultBranch = "main",
-                Category = "Animation & UI"
+                Category = "Animation & UI",
+                ReleaseDateString = "2026-09-20T10:00:00Z"
             },
             new PackageItem
             {
@@ -152,7 +221,8 @@ namespace Wagenheimer.PackageHub.Editor
                 RepoUrl = "https://github.com/wagenheimer/UnityTk2dPorter",
                 GitUrl = "https://github.com/wagenheimer/UnityTk2dPorter.git",
                 DefaultBranch = "main",
-                Category = "Migration & Tools"
+                Category = "Migration & Tools",
+                ReleaseDateString = "2026-09-20T10:00:00Z"
             }
         };
     }

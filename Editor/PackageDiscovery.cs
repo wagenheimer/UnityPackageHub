@@ -26,6 +26,8 @@ namespace Wagenheimer.PackageHub.Editor
                     GitUrl = known.GitUrl,
                     DefaultBranch = known.DefaultBranch,
                     Category = known.Category,
+                    ReleaseDateString = known.ReleaseDateString,
+                    ReleaseDate = known.ReleaseDate,
                     IsInstalled = false
                 });
             }
@@ -77,6 +79,39 @@ namespace Wagenheimer.PackageHub.Editor
                     }
 
                     item.InstalledVersion = CleanVersion(pkg.version);
+
+                    // Check local package files on disk for date
+                    try
+                    {
+                        var resolvedPath = pkg.resolvedPath;
+                        if (!string.IsNullOrEmpty(resolvedPath) && System.IO.Directory.Exists(resolvedPath))
+                        {
+                            var changelogPath = System.IO.Path.Combine(resolvedPath, "CHANGELOG.md");
+                            if (System.IO.File.Exists(changelogPath))
+                            {
+                                var text = System.IO.File.ReadAllText(changelogPath);
+                                var match = System.Text.RegularExpressions.Regex.Match(text, @"##\s*\[?v?[\d\.]+\]?\s*[-–—]\s*(\d{4}-\d{2}-\d{2})");
+                                if (match.Success && DateTimeOffset.TryParse(match.Groups[1].Value, out var dt))
+                                {
+                                    item.ReleaseDate = dt;
+                                    item.ReleaseDateString = match.Groups[1].Value;
+                                }
+                            }
+
+                            if (!item.ReleaseDate.HasValue)
+                            {
+                                var pkgJson = System.IO.Path.Combine(resolvedPath, "package.json");
+                                if (System.IO.File.Exists(pkgJson))
+                                {
+                                    item.ReleaseDate = new DateTimeOffset(System.IO.File.GetLastWriteTimeUtc(pkgJson));
+                                }
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Fallback to defaults
+                    }
 
                     // If git url in packageId has specific repo, update it
                     if (!string.IsNullOrEmpty(pkg.packageId) && pkg.packageId.Contains("github.com/wagenheimer/"))

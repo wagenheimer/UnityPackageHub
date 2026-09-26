@@ -40,6 +40,7 @@ namespace Wagenheimer.PackageHub.Editor
 
         [MenuItem("Tools/Wagenheimer/Package Hub...", priority = 0)]
         public static void ShowWindow() => OpenHub();
+        public static PackageHubWindow Open() => OpenHub();
 
         [MenuItem("Window/Wagenheimer/Package Hub", priority = 200)]
         public static void ShowWindowAlt() => ShowWindow();
@@ -160,6 +161,10 @@ namespace Wagenheimer.PackageHub.Editor
 
             // 2. Metrics Counter Bar
             _metricsContainer = new VisualElement();
+            _metricsContainer.AddToClassList("hub-metrics-container");
+            _metricsContainer.style.flexShrink = 0;
+            _metricsContainer.style.minHeight = 58;
+            _metricsContainer.style.marginBottom = 12;
             root.Add(_metricsContainer);
             RebuildMetrics();
 
@@ -191,7 +196,7 @@ namespace Wagenheimer.PackageHub.Editor
             {
                 $"Installed Packages ({installedCount})",
                 $"Explore Catalog ({catalogCount})",
-                "Sobre Cezar Wagenheimer & Ecosystem",
+                "About Cezar Wagenheimer & Ecosystem",
                 "Settings & Maintenance"
             };
 
@@ -274,6 +279,9 @@ namespace Wagenheimer.PackageHub.Editor
             var row = new VisualElement();
             row.AddToClassList("hub-metrics-row");
             row.style.flexDirection = FlexDirection.Row;
+            row.style.flexShrink = 0;
+            row.style.minHeight = 58;
+            row.style.height = 58;
             row.style.marginBottom = 12;
 
             // Installed card
@@ -732,6 +740,14 @@ namespace Wagenheimer.PackageHub.Editor
                 badgesRow.Add(PackageHubUIStyle.CreateBadge("Available", "hub-badge-neutral"));
             }
 
+            var relTime = item.GetRelativeReleaseTime();
+            if (!string.IsNullOrEmpty(relTime))
+            {
+                var timeBadge = PackageHubUIStyle.CreateBadge($"🕒 {relTime}", "hub-badge-time");
+                timeBadge.style.marginLeft = 6;
+                badgesRow.Add(timeBadge);
+            }
+
             header.Add(badgesRow);
             card.Add(header);
 
@@ -969,7 +985,7 @@ namespace Wagenheimer.PackageHub.Editor
 
         #endregion
 
-        #region Tab 2: Sobre Cezar Wagenheimer & Ecosystem
+        #region Tab 2: About Cezar Wagenheimer & Ecosystem
 
         private VisualElement BuildAboutView()
         {

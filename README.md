@@ -25,19 +25,19 @@
 
 Every package in the suite is designed around production battle-tested principles: **zero runtime garbage, compile-time platform separation, and modular decoupling**.
 
-| Icon | Package | Package ID | Primary Dashboard (`priority = 0`) | In-Game Debug Hotkey | Description |
-| :--- | :--- | :--- | :--- | :---: | :--- |
-| 🎛️ | **Package Hub** | `com.wagenheimer.packagehub` | `Tools/Wagenheimer/Package Hub...` | — | Centralized ecosystem manager, launcher & updater |
-| ⚡ | **Unity Utils** | `com.wagenheimer.unityutils` | `Tools/Wagenheimer/Unity Utils/Dashboard...` | — | Project cleanup, audio/animation audits & bootstrap builder |
-| 🔨 | **Build Pipeline** | `com.wagenheimer.buildpipeline` | `Tools/Wagenheimer/Build Pipeline/Dashboard...` | `F7` | Multi-publisher automated builds, keystores & APK/AAB |
-| ⭐ | **Rate Control** | `com.wagenheimer.ratecontrol` | `Tools/Wagenheimer/Rate Control/Dashboard...` | `F9` | Smart in-app review prompts, cooldowns & thresholds |
-| ☁️ | **Cloud Save** | `com.wagenheimer.cloudsave` | `Tools/Wagenheimer/Cloud Save/Dashboard...` | `F6` | Cross-platform UGS cloud save, conflict resolution & auth |
-| 📱 | **Native Social** | `com.wagenheimer.nativesocial` | `Tools/Wagenheimer/Native Social/Dashboard...` | `F8` | GPGS, Game Center & Steam achievements/leaderboards |
-| 💳 | **IAP Helper** | `com.wagenheimer.iaphelper` | `Tools/Wagenheimer/IAP Helper/Dashboard...` | — | In-App Purchases, catalog management & restore flows |
-| 📊 | **LevelPlay Helper** | `com.wagenheimer.levelplayhelper` | `Tools/Wagenheimer/Level Play Helper/Dashboard...` | — | ironSource / Unity LevelPlay mediation helper & ads QA |
-| 🎮 | **Rewired Helper** | `com.wagenheimer.rewiredhelper` | `Tools/Wagenheimer/Rewired Helper/Dashboard...` | — | Rewired input management, controller setup & diagnostics |
-| 🔄 | **Tk2d Porter** | `com.wagenheimer.tk2dporter` | `Tools/Wagenheimer/Tk2d Porter/Auto Converter...` | — | Automated 2D Toolkit migration to native Unity Sprite/UI |
-| ✍️ | **Timeline Typewriter** | `com.wagenheimer.timelinetypewriter`| `Tools/Wagenheimer/Timeline Typewriter/Docs...` | — | Cinematic TMP typewriter tracks for Unity Timeline |
+| Package | Menu Shortcut (`priority = 0`) | In-Game Debug | Features & Purpose |
+| :--- | :--- | :---: | :--- |
+| 🎛️ **Package Hub** | `Tools > Wagenheimer > Package Hub...` | — | Unified dashboard launcher, update checker & package catalog |
+| ⚡ **Unity Utils** | `... > Unity Utils > Dashboard...` | — | Missing scripts cleaner, audio/anim audits & code scaffolding |
+| 🔨 **Build Pipeline** | `... > Build Pipeline > Dashboard...` | `F7` | Multi-store build automation, keystore management & APK/AAB |
+| ⭐ **Rate Control** | `... > Rate Control > Dashboard...` | `F9` | Intelligent review prompts, milestone cooldowns & store redirects |
+| ☁️ **Cloud Save** | `... > Cloud Save > Dashboard...` | `F6` | Cross-platform UGS cloud save, conflict resolution & auth QA |
+| 📱 **Native Social** | `... > Native Social > Dashboard...` | `F8` | GPGS, Game Center & Steam achievements and leaderboards |
+| 💳 **IAP Helper** | `... > IAP Helper > Dashboard...` | — | In-App Purchases (v5+), catalog validation & restore purchases |
+| 📊 **LevelPlay Helper** | `... > Level Play Helper > Dashboard...` | — | ironSource / LevelPlay mediation helper & ads QA testing |
+| 🎮 **Rewired Helper** | `... > Rewired Helper > Dashboard...` | — | Rewired input management, controller setup & diagnostics |
+| 🔄 **Tk2d Porter** | `... > Tk2d Porter > Auto Converter...` | — | Automated 2D Toolkit migration to native Unity Sprites & UI |
+| ✍️ **Timeline Typewriter** | `... > Timeline Typewriter > Docs...` | — | Cinematic TextMeshPro typewriter tracks for Unity Timeline |
 
 ---
 
@@ -75,7 +75,7 @@ Add the dependency directly inside your project's `Packages/manifest.json`:
 ├───────────────────┬────────────────────────────────────────────────────┤
 │ METRICS ROW       │ • 5 Installed  • 5 Up to Date  • 5 Dashboards Ready│
 ├───────────────────┴────────────────────────────────────────────────────┤
-│ [Tabs]  📦 Installed (5)  |  🌐 Catalog (11)  |  📖 Sobre Cezar & Suite│
+│ [Tabs]  📦 Installed (5)  |  🌐 Catalog (11)  |  📖 About Cezar & Suite│
 ├────────────────────────────────────────────────────────────────────────┤
 │ • Interactive package cards with 1-click Dashboard / Debug Launchers   │
 │ • Live search, category filters (Core, Monetization, Platform, Audio)   │
@@ -166,15 +166,15 @@ public static class CustomDevMenu
 
 ---
 
-## 👤 Sobre o Autor & Filosofia
+## 👤 About the Author & Architecture Philosophy
 
-Desenvolvido por **Cezar Wagenheimer**, desenvolvedor de jogos e engenheiro de software focado em criar ferramentas open-source de padrão industrial para a comunidade Unity.
+Created by **Cezar Wagenheimer**, game developer and software engineer dedicated to building industrial-grade, open-source tooling for the Unity community.
 
-### Princípios Arquiteturais da Suite
-1. **Zero Garbage (0 GC)**: Operações em runtime são otimizadas para não alocar lixo por frame, preservando a fluidez em dispositivos mobile modestos.
-2. **Separação em Tempo de Compilação**: SDKs de terceiros e APIs nativas (Google Play Games, Game Center, Steamworks) são estritamente isoladas via `#if`, garantindo builds limpas e leves em todas as plataformas.
-3. **Desacoplamento e Independência**: Cada pacote funciona perfeitamente de forma isolada, mas integra-se organicamente à suite quando múltiplos pacotes estão instalados.
-4. **Tooling & DX de Primeira Linha**: Todo módulo possui seu próprio **Dashboard em UI Toolkit**, mecanismos automáticos de **Checker & Diagnostics**, ferramentas de **Live Helper & QA**, e painéis de **Debug In-Game**.
+### Core Architectural Principles
+1. **Zero Garbage (0 GC)**: Runtime operations are engineered to allocate zero garbage per frame, preserving peak 60/120 FPS performance even on low-end mobile devices.
+2. **Compile-Time Platform Isolation**: Platform SDKs and third-party native dependencies (Google Play Games, Game Center, Steamworks) are strictly guarded via `#if`, ensuring lightweight, clean builds on every target platform.
+3. **Decoupled & Modular Design**: Every package functions completely standalone with zero forced monolithic dependencies, yet seamlessly interconnects when multiple packages are present.
+4. **First-Class Tooling & Developer Experience**: Every single module provides its own **UI Toolkit Dashboard**, automated **Checker & Diagnostics** systems, comprehensive **Live Helpers**, and dedicated **In-Game Debug Overlays**.
 
 ---
 

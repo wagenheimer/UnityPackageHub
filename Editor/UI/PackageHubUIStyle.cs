@@ -224,6 +224,13 @@ namespace Wagenheimer.PackageHub.Editor
             var card = new VisualElement();
             card.AddToClassList("hub-metric-card");
             card.style.flexGrow = 1;
+            card.style.flexBasis = 0;
+            card.style.flexShrink = 0;
+            card.style.flexDirection = FlexDirection.Column;
+            card.style.justifyContent = Justify.Center;
+            card.style.alignItems = Align.Center;
+            card.style.height = 58;
+            card.style.minHeight = 58;
             card.style.backgroundColor = new StyleColor(ColCardBg);
             card.style.borderTopWidth = 1;
             card.style.borderBottomWidth = 1;
@@ -234,22 +241,24 @@ namespace Wagenheimer.PackageHub.Editor
             card.style.borderLeftColor = new StyleColor(ColCardBorder);
             card.style.borderRightColor = new StyleColor(ColCardBorder);
             card.style.SetRadius(7);
-            card.style.paddingTop = 8;
-            card.style.paddingBottom = 8;
-            card.style.paddingLeft = 12;
-            card.style.paddingRight = 12;
+            card.style.paddingTop = 6;
+            card.style.paddingBottom = 6;
+            card.style.paddingLeft = 10;
+            card.style.paddingRight = 10;
             card.style.marginRight = 8;
-            card.style.alignItems = Align.Center;
 
             valueLabel = new Label(initialValue);
             valueLabel.AddToClassList("hub-metric-value");
-            valueLabel.style.fontSize = 19;
+            valueLabel.style.fontSize = 18;
+            valueLabel.style.height = 22;
             valueLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
             valueLabel.style.color = new StyleColor(ColTextWhite);
+            valueLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
 
             var labelElement = new Label(label);
             labelElement.AddToClassList("hub-metric-label");
-            labelElement.style.fontSize = 10;
+            labelElement.style.fontSize = 10.5f;
+            labelElement.style.height = 14;
             labelElement.style.color = new StyleColor(ColTextMuted);
             labelElement.style.marginTop = 2;
             labelElement.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -293,6 +302,15 @@ namespace Wagenheimer.PackageHub.Editor
                 badge.style.borderLeftColor = new StyleColor(ColAmber);
                 badge.style.borderRightColor = new StyleColor(ColAmber);
                 badge.style.color = new StyleColor(new Color(0.99f, 0.83f, 0.30f));
+            }
+            else if (typeClass.Contains("time"))
+            {
+                badge.style.backgroundColor = new StyleColor(new Color(0.58f, 0.64f, 0.72f, 0.12f));
+                badge.style.borderTopColor = new StyleColor(new Color(0.58f, 0.64f, 0.72f, 0.30f));
+                badge.style.borderBottomColor = new StyleColor(new Color(0.58f, 0.64f, 0.72f, 0.30f));
+                badge.style.borderLeftColor = new StyleColor(new Color(0.58f, 0.64f, 0.72f, 0.30f));
+                badge.style.borderRightColor = new StyleColor(new Color(0.58f, 0.64f, 0.72f, 0.30f));
+                badge.style.color = new StyleColor(new Color(0.70f, 0.78f, 0.88f));
             }
             else
             {
