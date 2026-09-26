@@ -136,6 +136,7 @@ namespace Wagenheimer.PackageHub.Editor
                 },
                 SecondaryTools = new List<ToolShortcut>
                 {
+                    new ToolShortcut { Title = "In-Game Debug", MenuItemPath = "Tools/Wagenheimer/Cloud Save/Add Cloud Save Debug Overlay to Scene", Icon = "🛠️" },
                     new ToolShortcut { Title = "Setup & Verify", MenuItemPath = "Tools/Wagenheimer/Cloud Save/Setup && Verification...", Icon = "⚙️" },
                     new ToolShortcut { Title = "Test Window", MenuItemPath = "Tools/Wagenheimer/Cloud Save/Cloud Tester (Legacy)...", Icon = "🧪" },
                     new ToolShortcut { Title = "Audit Integration", MenuItemPath = "Tools/Wagenheimer/Cloud Save/Audit Integration", Icon = "🔍" }
@@ -195,6 +196,7 @@ namespace Wagenheimer.PackageHub.Editor
                 },
                 SecondaryTools = new List<ToolShortcut>
                 {
+                    new ToolShortcut { Title = "In-Game Debug", MenuItemPath = "Tools/Wagenheimer/Native Social/Add Native Social Debug Overlay to Scene", Icon = "🛠️" },
                     new ToolShortcut { Title = "Integration Guide", MenuItemPath = "Tools/Wagenheimer/Native Social/Integration Guide", Icon = "📖" }
                 }
             },
