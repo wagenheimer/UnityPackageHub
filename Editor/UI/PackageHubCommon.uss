@@ -444,6 +444,56 @@
     border-color: #FBBF24;
 }
 
+.hub-btn-busy {
+    background-color: #78350F;
+    border-color: #D97706;
+    color: #FDE68A;
+    opacity: 0.85;
+}
+
+/* ---------------- HEADER PROGRESS BAR ---------------- */
+.hub-header-progress {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top-width: 1px;
+    border-top-color: rgba(255, 255, 255, 0.08);
+    flex-direction: column;
+}
+
+.hub-progress-top {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hub-progress-status {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: #38BDF8;
+}
+
+.hub-progress-percent {
+    font-size: 10.5px;
+    -unity-font-style: bold;
+    color: #94A3B8;
+}
+
+.hub-progress-track {
+    height: 5px;
+    background-color: #0F1219;
+    border-radius: 3px;
+    margin-top: 6px;
+    overflow: hidden;
+}
+
+.hub-progress-fill {
+    height: 100%;
+    background-color: #38BDF8;
+    border-radius: 3px;
+    transition-duration: 0.15s;
+    transition-property: width;
+}
+
 .hub-btn-secondary {
     background-color: #242938;
     border-color: #384256;

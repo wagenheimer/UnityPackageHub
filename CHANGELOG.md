@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-09-25
+
+### Added
+- **Dynamic Braille Activity Spinners**: Update and Check for Updates buttons now feature high-frequency, zero-GC animated braille spinners (`⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏`) ticking via `EditorApplication.update` for instantaneous visual feedback.
+- **Real-Time Header Progress Bar**: Added an animated, smoothly transitioning progress bar across the top header displaying live batch status (e.g. `Updating (1 of 3): Cloud Save • 33%`) and indeterminate scanning pulses.
+- **Interactive Card Installation States**: Package cards actively being installed or updated now immediately light up with glowing amber borders, an active `[ ⠋ INSTALLING... ]` pill badge, and busy disabled action buttons.
+- **Zero-Latency UI Reaction**: Update and install actions immediately refresh the header and card views on the exact millisecond of click without awaiting asynchronous network or package resolution callbacks.
+
 ## [1.2.0] - 2026-09-25
 
 ### Added

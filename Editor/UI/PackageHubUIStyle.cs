@@ -79,7 +79,11 @@ namespace Wagenheimer.PackageHub.Editor
             Action onCheckUpdates,
             Action onUpdateAll,
             int updateCount,
-            bool isChecking)
+            bool isChecking,
+            string currentSpinner,
+            out Label progressStatusLabel,
+            out Label progressPercentLabel,
+            out VisualElement progressFillElement)
         {
             var header = new VisualElement();
             header.AddToClassList("hub-header");
@@ -193,19 +197,32 @@ namespace Wagenheimer.PackageHub.Editor
             actionsGroup.style.flexDirection = FlexDirection.Row;
             actionsGroup.style.alignItems = Align.Center;
 
+            var checkText = isChecking ? $"{currentSpinner ?? "⠋"} Checking..." : "🔄 Check Updates";
             var checkBtn = CreateButton(
-                isChecking ? "Checking..." : "🔄 Check Updates",
+                checkText,
                 "hub-btn-secondary",
                 onCheckUpdates);
             checkBtn.SetEnabled(!isChecking && !PackageInstaller.IsBusy);
             checkBtn.style.height = 28;
             actionsGroup.Add(checkBtn);
 
-            if (updateCount > 0)
+            if (updateCount > 0 || PackageInstaller.IsBusy)
             {
+                string btnText;
+                if (PackageInstaller.IsBusy)
+                {
+                    var done = PackageInstaller.BatchCompletedCount;
+                    var total = PackageInstaller.BatchTotalCount;
+                    btnText = total > 0 ? $"{currentSpinner ?? "⠋"} Updating ({done + 1}/{total})..." : $"{currentSpinner ?? "⠋"} Installing...";
+                }
+                else
+                {
+                    btnText = $"⚡ Update All ({updateCount})";
+                }
+
                 var updateAllBtn = CreateButton(
-                    $"⚡ Update All ({updateCount})",
-                    "hub-btn-warning",
+                    btnText,
+                    PackageInstaller.IsBusy ? "hub-btn-warning hub-btn-busy" : "hub-btn-warning",
                     onUpdateAll);
                 updateAllBtn.SetEnabled(!PackageInstaller.IsBusy);
                 updateAllBtn.style.height = 28;
@@ -215,6 +232,90 @@ namespace Wagenheimer.PackageHub.Editor
 
             topRow.Add(actionsGroup);
             header.Add(topRow);
+
+            // Live Animated Progress Bar
+            progressStatusLabel = null;
+            progressPercentLabel = null;
+            progressFillElement = null;
+
+            if (PackageInstaller.IsBusy || isChecking)
+            {
+                var progressRow = new VisualElement();
+                progressRow.AddToClassList("hub-header-progress");
+                progressRow.style.marginTop = 10;
+                progressRow.style.paddingTop = 10;
+                progressRow.style.borderTopWidth = 1;
+                progressRow.style.borderTopColor = new StyleColor(new Color(1f, 1f, 1f, 0.08f));
+                progressRow.style.flexDirection = FlexDirection.Column;
+
+                var progressTop = new VisualElement();
+                progressTop.AddToClassList("hub-progress-top");
+                progressTop.style.flexDirection = FlexDirection.Row;
+                progressTop.style.justifyContent = Justify.SpaceBetween;
+                progressTop.style.alignItems = Align.Center;
+
+                string initialStatus;
+                string initialPercent;
+                float initialFillPct;
+
+                if (isChecking)
+                {
+                    initialStatus = $"{currentSpinner ?? "⠋"} Checking remote package versions on GitHub...";
+                    initialPercent = "Scanning...";
+                    initialFillPct = 40f;
+                }
+                else
+                {
+                    var op = PackageInstaller.CurrentOperationTitle ?? "Installing package via UPM...";
+                    initialStatus = $"{currentSpinner ?? "⠋"} {op}";
+                    if (PackageInstaller.BatchTotalCount > 0)
+                    {
+                        var pct = (int)(PackageInstaller.BatchProgress * 100f);
+                        initialPercent = $"{pct}% ({PackageInstaller.BatchCompletedCount}/{PackageInstaller.BatchTotalCount})";
+                        initialFillPct = Mathf.Max(5f, PackageInstaller.BatchProgress * 100f);
+                    }
+                    else
+                    {
+                        initialPercent = "Resolving UPM git...";
+                        initialFillPct = 35f;
+                    }
+                }
+
+                progressStatusLabel = new Label(initialStatus);
+                progressStatusLabel.AddToClassList("hub-progress-status");
+                progressStatusLabel.style.fontSize = 11;
+                progressStatusLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+                progressStatusLabel.style.color = new StyleColor(isChecking ? ColAccent : ColAmber);
+                progressTop.Add(progressStatusLabel);
+
+                progressPercentLabel = new Label(initialPercent);
+                progressPercentLabel.AddToClassList("hub-progress-percent");
+                progressPercentLabel.style.fontSize = 10.5f;
+                progressPercentLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+                progressPercentLabel.style.color = new StyleColor(ColTextMuted);
+                progressTop.Add(progressPercentLabel);
+
+                progressRow.Add(progressTop);
+
+                var track = new VisualElement();
+                track.AddToClassList("hub-progress-track");
+                track.style.height = 5;
+                track.style.backgroundColor = new StyleColor(new Color(0.08f, 0.10f, 0.14f));
+                track.style.SetRadius(3);
+                track.style.marginTop = 6;
+                track.style.overflow = Overflow.Hidden;
+
+                progressFillElement = new VisualElement();
+                progressFillElement.AddToClassList("hub-progress-fill");
+                progressFillElement.style.height = Length.Percent(100);
+                progressFillElement.style.backgroundColor = new StyleColor(isChecking ? ColAccent : ColAmber);
+                progressFillElement.style.SetRadius(3);
+                progressFillElement.style.width = Length.Percent(initialFillPct);
+                track.Add(progressFillElement);
+
+                progressRow.Add(track);
+                header.Add(progressRow);
+            }
 
             return header;
         }

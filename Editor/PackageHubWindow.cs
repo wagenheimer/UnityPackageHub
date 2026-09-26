@@ -38,6 +38,16 @@ namespace Wagenheimer.PackageHub.Editor
         private VisualElement _headerContainer;
         private VisualElement _metricsContainer;
 
+        private static readonly string[] SpinnerFrames = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" };
+        private int _spinnerIndex = 0;
+        private double _lastSpinnerTick = 0;
+        private float _indeterminatePulse = 20f;
+        private bool _pulseDirection = true;
+
+        private Label _headerProgressStatus;
+        private Label _headerProgressPercent;
+        private VisualElement _headerProgressFill;
+
         [MenuItem("Tools/Wagenheimer/Package Hub...", priority = 0)]
         public static void ShowWindow() => OpenHub();
         public static PackageHubWindow Open() => OpenHub();
@@ -127,6 +137,9 @@ namespace Wagenheimer.PackageHub.Editor
 
         private void OnEnable()
         {
+            PackageInstaller.OnInstallStateChanged += HandleInstallStateChanged;
+            EditorApplication.update += OnEditorUpdate;
+
             LoadPackageVersion();
             try
             {
@@ -136,6 +149,104 @@ namespace Wagenheimer.PackageHub.Editor
             {
                 Debug.LogWarning($"[Wagenheimer Package Hub] Package discovery failed: {e.Message}");
                 _allPackages = new List<PackageItem>();
+            }
+        }
+
+        private void OnDisable()
+        {
+            PackageInstaller.OnInstallStateChanged -= HandleInstallStateChanged;
+            EditorApplication.update -= OnEditorUpdate;
+        }
+
+        private void HandleInstallStateChanged()
+        {
+            RebuildHeader();
+            RebuildMetrics();
+            RenderActiveTab();
+        }
+
+        private void OnEditorUpdate()
+        {
+            var isBusy = PackageInstaller.IsBusy;
+            if (!isBusy && !_isCheckingAll)
+                return;
+
+            var time = EditorApplication.timeSinceStartup;
+            if (time - _lastSpinnerTick < 0.08) // 12.5 fps smooth braille animation
+                return;
+
+            _lastSpinnerTick = time;
+            _spinnerIndex = (_spinnerIndex + 1) % SpinnerFrames.Length;
+            var spinner = SpinnerFrames[_spinnerIndex];
+
+            // Animate indeterminate pulse width
+            if (_pulseDirection)
+            {
+                _indeterminatePulse += 3f;
+                if (_indeterminatePulse >= 90f) _pulseDirection = false;
+            }
+            else
+            {
+                _indeterminatePulse -= 3f;
+                if (_indeterminatePulse <= 15f) _pulseDirection = true;
+            }
+
+            // 1. Live update header progress bar without full rebuild
+            if (_headerProgressStatus != null)
+            {
+                if (_isCheckingAll)
+                {
+                    _headerProgressStatus.text = $"{spinner} Checking remote package versions on GitHub...";
+                    if (_headerProgressPercent != null) _headerProgressPercent.text = "Scanning...";
+                    if (_headerProgressFill != null)
+                    {
+                        _headerProgressFill.style.width = Length.Percent(_indeterminatePulse);
+                        _headerProgressFill.style.backgroundColor = new StyleColor(PackageHubUIStyle.ColAccent);
+                    }
+                }
+                else if (isBusy)
+                {
+                    var op = PackageInstaller.CurrentOperationTitle ?? "Installing package via UPM...";
+                    _headerProgressStatus.text = $"{spinner} {op}";
+                    if (PackageInstaller.BatchTotalCount > 0)
+                    {
+                        var pct = (int)(PackageInstaller.BatchProgress * 100f);
+                        if (_headerProgressPercent != null)
+                        {
+                            _headerProgressPercent.text = $"{pct}% ({PackageInstaller.BatchCompletedCount}/{PackageInstaller.BatchTotalCount})";
+                        }
+                        if (_headerProgressFill != null)
+                        {
+                            _headerProgressFill.style.width = Length.Percent(Mathf.Max(5f, PackageInstaller.BatchProgress * 100f));
+                            _headerProgressFill.style.backgroundColor = new StyleColor(PackageHubUIStyle.ColAmber);
+                        }
+                    }
+                    else
+                    {
+                        if (_headerProgressPercent != null) _headerProgressPercent.text = "Resolving UPM git...";
+                        if (_headerProgressFill != null)
+                        {
+                            _headerProgressFill.style.width = Length.Percent(_indeterminatePulse);
+                            _headerProgressFill.style.backgroundColor = new StyleColor(PackageHubUIStyle.ColAmber);
+                        }
+                    }
+                }
+            }
+
+            // 2. Live update busy labels and buttons in active cards
+            if (_contentContainer != null)
+            {
+                var busyBadges = _contentContainer.Query<Label>(className: "hub-badge-busy").ToList();
+                foreach (var b in busyBadges)
+                {
+                    b.text = $"{spinner} INSTALLING...";
+                }
+
+                var busyButtons = _contentContainer.Query<Button>(className: "hub-btn-busy").ToList();
+                foreach (var btn in busyButtons)
+                {
+                    btn.text = $"{spinner} Installing...";
+                }
             }
         }
 
@@ -253,6 +364,8 @@ namespace Wagenheimer.PackageHub.Editor
             _headerContainer.Clear();
 
             var updateCount = _allPackages.Count(p => p.IsInstalled && p.HasUpdate);
+            var spinner = SpinnerFrames[_spinnerIndex % SpinnerFrames.Length];
+
             var header = PackageHubUIStyle.CreateHeader(
                 "WAGENHEIMER PACKAGE HUB",
                 "Central Ecosystem Package Manager, Diagnostics & Dashboard Center",
@@ -260,7 +373,11 @@ namespace Wagenheimer.PackageHub.Editor
                 CheckAllUpdates,
                 UpdateAllOutdated,
                 updateCount,
-                _isCheckingAll
+                _isCheckingAll,
+                spinner,
+                out _headerProgressStatus,
+                out _headerProgressPercent,
+                out _headerProgressFill
             );
             _headerContainer.Add(header);
         }
@@ -650,15 +767,16 @@ namespace Wagenheimer.PackageHub.Editor
                             string.Equals(item.PackageId, _targetPackageFocus, StringComparison.OrdinalIgnoreCase);
 
             var card = new VisualElement();
+            var isUpdating = item.IsUpdating;
             card.AddToClassList("hub-card");
             card.style.backgroundColor = new StyleColor(isFocused ? new Color(0.13f, 0.16f, 0.24f) : PackageHubUIStyle.ColCardBg);
             card.style.borderTopWidth = 1;
             card.style.borderBottomWidth = 1;
-            card.style.borderLeftWidth = isFocused ? 3 : 1;
+            card.style.borderLeftWidth = isUpdating ? 4 : (isFocused ? 3 : 1);
             card.style.borderRightWidth = 1;
             card.style.borderTopColor = new StyleColor(isFocused ? PackageHubUIStyle.ColAccent : PackageHubUIStyle.ColCardBorder);
             card.style.borderBottomColor = new StyleColor(isFocused ? PackageHubUIStyle.ColAccent : PackageHubUIStyle.ColCardBorder);
-            card.style.borderLeftColor = new StyleColor(isFocused ? PackageHubUIStyle.ColAccent : PackageHubUIStyle.ColCardBorder);
+            card.style.borderLeftColor = new StyleColor(isUpdating ? PackageHubUIStyle.ColAmber : (isFocused ? PackageHubUIStyle.ColAccent : PackageHubUIStyle.ColCardBorder));
             card.style.borderRightColor = new StyleColor(isFocused ? PackageHubUIStyle.ColAccent : PackageHubUIStyle.ColCardBorder);
             card.style.SetRadius(8);
             card.style.paddingTop = 12;
@@ -718,7 +836,8 @@ namespace Wagenheimer.PackageHub.Editor
 
             if (item.IsUpdating)
             {
-                badgesRow.Add(PackageHubUIStyle.CreateBadge("INSTALLING...", "hub-badge-info"));
+                var spinner = SpinnerFrames[_spinnerIndex % SpinnerFrames.Length];
+                badgesRow.Add(PackageHubUIStyle.CreateBadge($"{spinner} INSTALLING...", "hub-badge-busy hub-badge-update"));
             }
             else if (item.IsChecking)
             {
@@ -846,10 +965,23 @@ namespace Wagenheimer.PackageHub.Editor
             actions.style.flexDirection = FlexDirection.Row;
             actions.style.alignItems = Align.Center;
 
-            if (item.IsInstalled)
+            if (item.IsUpdating)
+            {
+                var spinner = SpinnerFrames[_spinnerIndex % SpinnerFrames.Length];
+                var busyBtn = PackageHubUIStyle.CreateButton(
+                    $"{spinner} Installing...",
+                    "hub-btn-warning hub-btn-busy",
+                    null
+                );
+                busyBtn.SetEnabled(false);
+                busyBtn.style.marginRight = 6;
+                actions.Add(busyBtn);
+            }
+            else if (item.IsInstalled)
             {
                 if (item.HasUpdate)
                 {
+                    var isBusy = PackageInstaller.IsBusy;
                     var updateBtn = PackageHubUIStyle.CreateButton(
                         $"⚡ Update to v{item.LatestRemoteVersion}",
                         "hub-btn-warning",
@@ -862,15 +994,22 @@ namespace Wagenheimer.PackageHub.Editor
                                 RebuildMetrics();
                                 RenderActiveTab();
                             });
+                            RebuildHeader();
+                            RenderActiveTab();
                         }
                     );
-                    updateBtn.SetEnabled(!PackageInstaller.IsBusy);
+                    updateBtn.SetEnabled(!isBusy);
+                    if (isBusy)
+                    {
+                        updateBtn.tooltip = "Another package installation is currently in progress...";
+                    }
                     updateBtn.style.marginRight = 6;
                     actions.Add(updateBtn);
                 }
             }
             else
             {
+                var isBusy = PackageInstaller.IsBusy;
                 var installBtn = PackageHubUIStyle.CreateButton(
                     "Install to Project",
                     "hub-btn-primary",
@@ -883,9 +1022,15 @@ namespace Wagenheimer.PackageHub.Editor
                             RebuildMetrics();
                             RenderActiveTab();
                         });
+                        RebuildHeader();
+                        RenderActiveTab();
                     }
                 );
-                installBtn.SetEnabled(!PackageInstaller.IsBusy);
+                installBtn.SetEnabled(!isBusy);
+                if (isBusy)
+                {
+                    installBtn.tooltip = "Another package installation is currently in progress...";
+                }
                 installBtn.style.marginRight = 6;
                 actions.Add(installBtn);
             }

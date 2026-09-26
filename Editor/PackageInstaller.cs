@@ -15,12 +15,20 @@ namespace Wagenheimer.PackageHub.Editor
 
         private static readonly Queue<PackageItem> _batchQueue = new Queue<PackageItem>();
         private static Action _onBatchCompleted;
+        private static bool _isBatchRunning;
 
-        public static bool IsBusy => _currentAddRequest != null && !_currentAddRequest.IsCompleted;
+        public static event Action OnInstallStateChanged;
+
+        public static bool IsBusy => (_currentAddRequest != null && !_currentAddRequest.IsCompleted) || _batchQueue.Count > 0 || _isBatchRunning;
+        public static int BatchTotalCount { get; private set; }
+        public static int BatchCompletedCount { get; private set; }
+        public static PackageItem CurrentUpdatingItem => _currentUpdatingItem;
+        public static string CurrentOperationTitle { get; private set; }
+        public static float BatchProgress => BatchTotalCount > 0 ? (float)BatchCompletedCount / BatchTotalCount : (IsBusy ? 0.5f : 0f);
 
         public static void InstallOrUpdate(PackageItem item, string targetVersion = null, Action<bool, string> callback = null)
         {
-            if (IsBusy)
+            if (IsBusy && _currentAddRequest != null && !_currentAddRequest.IsCompleted)
             {
                 callback?.Invoke(false, "Another package installation is already in progress.");
                 return;
@@ -44,6 +52,9 @@ namespace Wagenheimer.PackageHub.Editor
             item.UpdateError = null;
             _currentUpdatingItem = item;
             _currentCallback = callback;
+            CurrentOperationTitle = $"Installing {item.DisplayName} (v{ver ?? "latest"})...";
+
+            OnInstallStateChanged?.Invoke();
 
             Debug.Log($"[Wagenheimer.PackageHub] Installing {item.DisplayName} via: {packageSpec}");
             _currentAddRequest = Client.Add(packageSpec);
@@ -64,7 +75,12 @@ namespace Wagenheimer.PackageHub.Editor
                 _batchQueue.Enqueue(item);
             }
 
+            BatchTotalCount = itemsToUpdate.Count;
+            BatchCompletedCount = 0;
+            _isBatchRunning = true;
             _onBatchCompleted = onAllCompleted;
+
+            OnInstallStateChanged?.Invoke();
             ProcessNextBatch();
         }
 
@@ -72,18 +88,27 @@ namespace Wagenheimer.PackageHub.Editor
         {
             if (_batchQueue.Count == 0)
             {
-                _onBatchCompleted?.Invoke();
+                _isBatchRunning = false;
+                CurrentOperationTitle = null;
+                var cb = _onBatchCompleted;
                 _onBatchCompleted = null;
+                OnInstallStateChanged?.Invoke();
+                cb?.Invoke();
                 return;
             }
 
             var nextItem = _batchQueue.Dequeue();
+            CurrentOperationTitle = $"Updating {nextItem.DisplayName} ({BatchCompletedCount + 1} of {BatchTotalCount})...";
+            OnInstallStateChanged?.Invoke();
+
             InstallOrUpdate(nextItem, nextItem.LatestRemoteVersion, (success, err) =>
             {
+                BatchCompletedCount++;
                 if (!success)
                 {
                     Debug.LogWarning($"[Wagenheimer.PackageHub] Failed to update {nextItem.DisplayName}: {err}");
                 }
+                OnInstallStateChanged?.Invoke();
                 ProcessNextBatch();
             });
         }
@@ -120,7 +145,12 @@ namespace Wagenheimer.PackageHub.Editor
             _currentAddRequest = null;
             _currentUpdatingItem = null;
             _currentCallback = null;
+            if (!_isBatchRunning)
+            {
+                CurrentOperationTitle = null;
+            }
 
+            OnInstallStateChanged?.Invoke();
             cb?.Invoke(success, error);
         }
     }
