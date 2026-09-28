@@ -442,7 +442,7 @@ namespace Wagenheimer.PackageHub.Editor
                         if (success)
                         {
                             EditorUtility.DisplayDialog("Migration Complete", "Google dependencies migrated successfully! Unity is now resolving packages via Git.", "OK");
-                            RefreshData();
+                            RefreshPackages(true);
                         }
                         else
                         {
