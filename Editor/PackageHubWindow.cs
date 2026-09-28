@@ -380,6 +380,92 @@ namespace Wagenheimer.PackageHub.Editor
                 out _headerProgressFill
             );
             _headerContainer.Add(header);
+
+            var googleDiag = GoogleDependencyManager.Detect();
+            if (googleDiag.NeedsMigration)
+            {
+                _headerContainer.Add(BuildGoogleMigrationBanner(googleDiag));
+            }
+        }
+
+        private VisualElement BuildGoogleMigrationBanner(GoogleDependencyManager.Diagnosis diag)
+        {
+            var banner = new VisualElement();
+            banner.style.marginTop = 10;
+            banner.style.paddingTop = 10;
+            banner.style.paddingBottom = 10;
+            banner.style.paddingLeft = 14;
+            banner.style.paddingRight = 14;
+            banner.style.backgroundColor = new StyleColor(new Color(0.25f, 0.16f, 0.04f, 0.95f));
+            banner.style.borderTopWidth = 1;
+            banner.style.borderBottomWidth = 1;
+            banner.style.borderLeftWidth = 1;
+            banner.style.borderRightWidth = 1;
+            banner.style.borderTopColor = new StyleColor(PackageHubUIStyle.ColAmber);
+            banner.style.borderBottomColor = new StyleColor(PackageHubUIStyle.ColAmber);
+            banner.style.borderLeftColor = new StyleColor(PackageHubUIStyle.ColAmber);
+            banner.style.borderRightColor = new StyleColor(PackageHubUIStyle.ColAmber);
+            banner.style.SetRadius(7);
+            banner.style.flexDirection = FlexDirection.Row;
+            banner.style.alignItems = Align.Center;
+            banner.style.justifyContent = Justify.SpaceBetween;
+
+            var textCol = new VisualElement();
+            textCol.style.flexGrow = 1;
+            textCol.style.marginRight = 12;
+
+            var title = new Label("⚠️ Google & EDM4U: Migration Recommended");
+            title.style.fontSize = 12.5f;
+            title.style.unityFontStyleAndWeight = FontStyle.Bold;
+            title.style.color = new StyleColor(PackageHubUIStyle.ColAmber);
+
+            var sub = new Label("RateControl is installed. Migrating Google dependencies to clean official Git URLs removes Scoped Registries and eliminates Unity 'unverified package' warnings.");
+            sub.style.fontSize = 10.5f;
+            sub.style.color = new StyleColor(PackageHubUIStyle.ColTextWhite);
+            sub.style.marginTop = 2;
+
+            textCol.Add(title);
+            textCol.Add(sub);
+            banner.Add(textCol);
+
+            var btnRow = new VisualElement();
+            btnRow.style.flexDirection = FlexDirection.Row;
+
+            var btnMigrate = PackageHubUIStyle.CreateButton("⚡ Migrate to Clean Git", "hub-btn-warning", () =>
+            {
+                if (EditorUtility.DisplayDialog("Migrate Google Dependencies",
+                    "This will configure EDM4U, Play Common, Play Core, and Play Review directly via official Git repositories and remove Scoped Registries that cause Unity 'unverified package' warnings.\n\nProceed?",
+                    "Migrate Now", "Cancel"))
+                {
+                    GoogleDependencyManager.MigrateToRecommended(true, (success, msg) =>
+                    {
+                        if (success)
+                        {
+                            EditorUtility.DisplayDialog("Migration Complete", "Google dependencies migrated successfully! Unity is now resolving packages via Git.", "OK");
+                            RefreshData();
+                        }
+                        else
+                        {
+                            EditorUtility.DisplayDialog("Migration Error", $"Could not complete migration: {msg}", "OK");
+                        }
+                    });
+                }
+            });
+            btnMigrate.style.height = 28;
+
+            var btnDetails = PackageHubUIStyle.CreateButton("Details", "hub-btn-secondary", () =>
+            {
+                var issues = string.Join("\n• ", diag.Issues);
+                EditorUtility.DisplayDialog("Google Dependencies Diagnosis", $"Status:\n• {issues}\n\nRecommended: Use official Git repositories to avoid Unity unverified package warnings.", "OK");
+            });
+            btnDetails.style.height = 28;
+            btnDetails.style.marginLeft = 6;
+
+            btnRow.Add(btnMigrate);
+            btnRow.Add(btnDetails);
+            banner.Add(btnRow);
+
+            return banner;
         }
 
         private void RebuildMetrics()
@@ -1474,6 +1560,96 @@ namespace Wagenheimer.PackageHub.Editor
 
             cacheCard.Add(cacheActions);
             scroll.Add(cacheCard);
+
+            // Google Dependencies & EDM4U Maintenance Card
+            var googleCard = new VisualElement();
+            googleCard.AddToClassList("hub-card");
+            googleCard.style.backgroundColor = new StyleColor(PackageHubUIStyle.ColCardBg);
+            googleCard.style.SetRadius(8);
+            googleCard.style.paddingTop = 12;
+            googleCard.style.paddingBottom = 12;
+            googleCard.style.paddingLeft = 14;
+            googleCard.style.paddingRight = 14;
+            googleCard.style.marginBottom = 10;
+
+            var googleTitle = new Label("Google In-App Review & EDM4U Dependencies");
+            googleTitle.style.fontSize = 13;
+            googleTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
+            googleTitle.style.color = new StyleColor(PackageHubUIStyle.ColTextWhite);
+            googleCard.Add(googleTitle);
+
+            var googleSub = new Label("Official dependencies required for Android In-App Review with RateControl. Recommended setup uses verified Git URLs with zero Scoped Registries.");
+            googleSub.style.fontSize = 11;
+            googleSub.style.color = new StyleColor(PackageHubUIStyle.ColTextMuted);
+            googleSub.style.marginTop = 3;
+            googleCard.Add(googleSub);
+
+            var gDiag = GoogleDependencyManager.Detect();
+            var statusRow = new VisualElement();
+            statusRow.style.flexDirection = FlexDirection.Row;
+            statusRow.style.alignItems = Align.Center;
+            statusRow.style.marginTop = 8;
+
+            var statusBadge = PackageHubUIStyle.CreateBadge(
+                gDiag.IsFullyCompliant ? "COMPLIANT (CLEAN GIT)" : (gDiag.NeedsMigration ? "ACTION REQUIRED" : "ACTIVE"),
+                gDiag.IsFullyCompliant ? "hub-badge-pass" : (gDiag.NeedsMigration ? "hub-badge-warning" : "hub-badge-info")
+            );
+            statusRow.Add(statusBadge);
+
+            var statusDesc = new Label(gDiag.Summary);
+            statusDesc.style.fontSize = 11;
+            statusDesc.style.color = new StyleColor(PackageHubUIStyle.ColTextWhite);
+            statusDesc.style.marginLeft = 8;
+            statusRow.Add(statusDesc);
+            googleCard.Add(statusRow);
+
+            var googleActions = new VisualElement();
+            googleActions.style.flexDirection = FlexDirection.Row;
+            googleActions.style.marginTop = 10;
+
+            if (gDiag.NeedsMigration)
+            {
+                var btnMigrate = PackageHubUIStyle.CreateButton("⚡ Migrate to Recommended Git Setup", "hub-btn-warning", () =>
+                {
+                    if (EditorUtility.DisplayDialog("Migrate Google Dependencies",
+                        "This will configure EDM4U, Play Common, Play Core, and Play Review directly via official Git repositories and remove Scoped Registries that cause Unity 'unverified package' warnings.\n\nProceed?",
+                        "Migrate Now", "Cancel"))
+                    {
+                        GoogleDependencyManager.MigrateToRecommended(true, (success, msg) =>
+                        {
+                            EditorUtility.DisplayDialog("Migration Result", msg, "OK");
+                            RefreshPackages(true);
+                            RebuildHeader();
+                            RebuildMetrics();
+                            RenderActiveTab();
+                        });
+                    }
+                });
+                btnMigrate.style.marginRight = 6;
+                googleActions.Add(btnMigrate);
+            }
+
+            var btnForceUpdate = PackageHubUIStyle.CreateButton("Force Refresh Git Commits", "hub-btn-secondary", () =>
+            {
+                if (EditorUtility.DisplayDialog("Update Google Packages",
+                    "This will clear cached commit hashes for EDM4U and Google Play Review in packages-lock.json and prompt Unity to fetch the latest commits from GitHub.\n\nProceed?",
+                    "Update Now", "Cancel"))
+                {
+                    GoogleDependencyManager.ForceUpdateGooglePackages((success, msg) =>
+                    {
+                        EditorUtility.DisplayDialog("Update Status", msg, "OK");
+                        RefreshPackages(true);
+                        RebuildHeader();
+                        RebuildMetrics();
+                        RenderActiveTab();
+                    });
+                }
+            });
+            btnForceUpdate.style.marginRight = 6;
+            googleActions.Add(btnForceUpdate);
+
+            googleCard.Add(googleActions);
+            scroll.Add(googleCard);
 
             // Package Information
             var infoCard = new VisualElement();

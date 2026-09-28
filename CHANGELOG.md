@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-09-28
+
+### Added
+- **Google & EDM4U Dependency Manager (`GoogleDependencyManager`)**: Complete diagnostic, verification, migration, and update module for Google Play Review, Play Core, Play Common, and External Dependency Manager (EDM4U).
+- **Automated Migration from Scoped Registries**: Automatically detects and migrates packages from OpenUPM/Scoped Registries to verified, official Git URLs, cleanly removing Scoped Registries to permanently eliminate Unity "unverified package" security warnings.
+- **Migration & Health Banner in Hub Window**: Added a prominent amber action banner at the top of the Package Hub window when RateControl is detected with unverified registries or missing Google dependencies, allowing one-click migration.
+- **Maintenance & Force Update Controls**: New card in "Settings & Maintenance" tab showing Google dependencies health badge and a button to strip lockfile cache and pull latest commits directly from GitHub.
+- **Silent Background Health Check**: Extended `PackageHubAutoChecker` to quietly warn in console if RateControl dependencies require migration.
+
 ## [1.2.1] - 2026-09-25
 
 ### Added

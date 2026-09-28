@@ -49,6 +49,13 @@ namespace Wagenheimer.PackageHub.Editor
                         PackageHubWindow.ShowWindow();
                     }
                 }
+
+                // Check Google dependencies if RateControl is in the project
+                var googleDiag = GoogleDependencyManager.Detect();
+                if (googleDiag.NeedsMigration)
+                {
+                    Debug.LogWarning("<color=#F59E0B><b>[Wagenheimer Package Hub]</b></color> Google dependencies for RateControl require migration to recommended Git setup (Scoped Registry or missing packages detected). Open <b>Window > Wagenheimer > Package Hub</b> to migrate.");
+                }
             });
         }
     }
