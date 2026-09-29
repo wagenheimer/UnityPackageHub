@@ -365,11 +365,48 @@ namespace Wagenheimer.PackageHub.Editor
         {
             foreach (var req in RequiredPackages)
             {
-                // Remove package block from packages-lock.json: "package.id": { ... },
-                var pattern = $"\"{Regex.Escape(req.Id)}\"\\s*:\\s*\\{{.*?\\}}(\\s*,)?";
-                json = Regex.Replace(json, pattern, "", RegexOptions.Singleline);
+                json = RemoveJsonEntry(json, req.Id);
             }
             return json;
+        }
+
+        /// <summary>
+        /// Removes a top-level "key": { ... } entry (plus its trailing comma) from a JSON object body,
+        /// correctly honoring brace nesting depth. A naive non-greedy regex (\{.*?\}) stops at the first
+        /// '}' it encounters, which is the closing brace of a nested object (e.g. "dependencies": {}),
+        /// not the entry's own closing brace — silently truncating the entry and corrupting the file.
+        /// </summary>
+        private static string RemoveJsonEntry(string json, string key)
+        {
+            var keyMatch = Regex.Match(json, $"\"{Regex.Escape(key)}\"\\s*:\\s*\\{{");
+            if (!keyMatch.Success) return json;
+
+            var braceStart = keyMatch.Index + keyMatch.Length - 1; // index of the opening '{'
+            var depth = 0;
+            var braceEnd = -1;
+            for (var i = braceStart; i < json.Length; i++)
+            {
+                if (json[i] == '{') depth++;
+                else if (json[i] == '}')
+                {
+                    depth--;
+                    if (depth == 0)
+                    {
+                        braceEnd = i;
+                        break;
+                    }
+                }
+            }
+
+            if (braceEnd < 0) return json; // unbalanced braces; leave untouched rather than corrupt
+
+            var entryEnd = braceEnd + 1;
+            // Also consume a trailing comma (and any whitespace before it) so we don't leave a dangling ",".
+            var afterEntry = entryEnd;
+            while (afterEntry < json.Length && char.IsWhiteSpace(json[afterEntry])) afterEntry++;
+            if (afterEntry < json.Length && json[afterEntry] == ',') afterEntry++;
+
+            return json.Substring(0, keyMatch.Index) + json.Substring(afterEntry);
         }
 
         // ── Update Checker ─────────────────────────────────────────────────────────

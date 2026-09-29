@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.3] - 2026-09-28
+
+### Fixed
+- **Header/banner overlap at narrow window widths**: the header's top row, title row, action-button row,
+  and the Google Dependency migration banner used `FlexDirection.Row` with no wrapping, so shrinking the
+  Package Hub window clipped and overlapped elements instead of reflowing them. Added `flexWrap = Wrap.Wrap`
+  (with matching `flexShrink`/margins) to all four.
+- **`Packages/packages-lock.json` corruption from the Google migration**: `GoogleDependencyManager.CleanLockfileEntries`
+  used a non-greedy `\{.*?\}` regex to strip each Google package's lockfile block, which stopped at the
+  *first* `}` — the nested empty `"dependencies": {}` object's closing brace, not the entry's own — silently
+  truncating every migrated entry into invalid JSON. Replaced with a brace-depth-aware `RemoveJsonEntry` that
+  finds the entry's true matching closing brace.
+
 ## [1.3.2] - 2026-09-28
 
 ### Fixed

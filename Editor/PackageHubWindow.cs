@@ -407,12 +407,16 @@ namespace Wagenheimer.PackageHub.Editor
             banner.style.borderRightColor = new StyleColor(PackageHubUIStyle.ColAmber);
             banner.style.SetRadius(7);
             banner.style.flexDirection = FlexDirection.Row;
+            banner.style.flexWrap = Wrap.Wrap;
             banner.style.alignItems = Align.Center;
             banner.style.justifyContent = Justify.SpaceBetween;
 
             var textCol = new VisualElement();
             textCol.style.flexGrow = 1;
+            textCol.style.flexShrink = 1;
+            textCol.style.minWidth = 200;
             textCol.style.marginRight = 12;
+            textCol.style.marginBottom = 6;
 
             var title = new Label("⚠️ Google & EDM4U: Migration Recommended");
             title.style.fontSize = 12.5f;
@@ -430,6 +434,8 @@ namespace Wagenheimer.PackageHub.Editor
 
             var btnRow = new VisualElement();
             btnRow.style.flexDirection = FlexDirection.Row;
+            btnRow.style.flexWrap = Wrap.Wrap;
+            btnRow.style.flexShrink = 0;
 
             var btnMigrate = PackageHubUIStyle.CreateButton("⚡ Migrate to Clean Git", "hub-btn-warning", () =>
             {

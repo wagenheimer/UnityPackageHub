@@ -106,6 +106,7 @@ namespace Wagenheimer.PackageHub.Editor
             var topRow = new VisualElement();
             topRow.AddToClassList("hub-header-top");
             topRow.style.flexDirection = FlexDirection.Row;
+            topRow.style.flexWrap = Wrap.Wrap;
             topRow.style.justifyContent = Justify.SpaceBetween;
             topRow.style.alignItems = Align.Center;
 
@@ -113,10 +114,14 @@ namespace Wagenheimer.PackageHub.Editor
             var titleGroup = new VisualElement();
             titleGroup.AddToClassList("hub-title-group");
             titleGroup.style.flexDirection = FlexDirection.Column;
+            titleGroup.style.flexShrink = 1;
+            titleGroup.style.marginRight = 10;
+            titleGroup.style.marginBottom = 4;
 
             var titleRow = new VisualElement();
             titleRow.AddToClassList("hub-title-row");
             titleRow.style.flexDirection = FlexDirection.Row;
+            titleRow.style.flexWrap = Wrap.Wrap;
             titleRow.style.alignItems = Align.Center;
 
             var titleLabel = new Label(title);
@@ -195,6 +200,8 @@ namespace Wagenheimer.PackageHub.Editor
             var actionsGroup = new VisualElement();
             actionsGroup.AddToClassList("hub-header-actions");
             actionsGroup.style.flexDirection = FlexDirection.Row;
+            actionsGroup.style.flexWrap = Wrap.Wrap;
+            actionsGroup.style.flexShrink = 0;
             actionsGroup.style.alignItems = Align.Center;
 
             var checkText = isChecking ? $"{currentSpinner ?? "⠋"} Checking..." : "🔄 Check Updates";
