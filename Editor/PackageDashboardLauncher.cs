@@ -189,8 +189,8 @@ namespace Wagenheimer.PackageHub.Editor
                 {
                     Title = "Dashboard",
                     MenuItemPath = "Tools/Wagenheimer/Native Social/Dashboard...",
-                    TypeName = "Wagenheimer.NativeSocial.Editor.UI.NativeSocialHubWindow",
-                    MethodName = "Open",
+                    TypeName = "Wagenheimer.NativeSocial.Editor.NativeSocialDashboardWindow",
+                    MethodName = "OpenDashboard",
                     Icon = "📱",
                     IsPrimary = true
                 },
