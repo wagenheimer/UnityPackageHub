@@ -71,6 +71,8 @@
 }
 
 .hub-header-link {
+    flex-direction: row;
+    align-items: center;
     font-size: 11px;
     color: #38BDF8;
     -unity-font-style: bold;
@@ -391,6 +393,22 @@
     cursor: link;
     transition-duration: 0.12s;
     transition-property: background-color, border-color;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+/* A leading icon gets its own reserved box; inline, a fallback emoji glyph draws wider than it
+   measures and the label would overlap it ("Check Updates" over the icon). */
+.hub-btn-icon {
+    min-width: 16px;
+    margin-right: 7px;
+    flex-shrink: 0;
+    -unity-text-align: middle-center;
+}
+
+.hub-btn-text {
+    flex-shrink: 0;
 }
 
 .hub-btn:hover {

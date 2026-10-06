@@ -245,7 +245,7 @@ namespace Wagenheimer.PackageHub.Editor
                 var busyButtons = _contentContainer.Query<Button>(className: "hub-btn-busy").ToList();
                 foreach (var btn in busyButtons)
                 {
-                    btn.text = $"{spinner} Installing...";
+                    PackageHubUIStyle.ApplyIconText(btn, $"{spinner} Installing...");
                 }
             }
         }
@@ -418,7 +418,7 @@ namespace Wagenheimer.PackageHub.Editor
             textCol.style.marginRight = 12;
             textCol.style.marginBottom = 6;
 
-            var title = new Label("⚠️ Google & EDM4U: Migration Recommended");
+            var title = PackageHubUIStyle.CreateIconLabel("⚠️ Google & EDM4U: Migration Recommended");
             title.style.fontSize = 12.5f;
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
             title.style.color = new StyleColor(PackageHubUIStyle.ColAmber);
@@ -601,8 +601,7 @@ namespace Wagenheimer.PackageHub.Editor
                 qHeader.style.justifyContent = Justify.SpaceBetween;
                 qHeader.style.marginBottom = 8;
 
-                var qTitle = new Label("⚡ QUICK LAUNCH DASHBOARDS — INSTANT 1-CLICK ACCESS");
-                qTitle.AddToClassList("hub-quickbar-title");
+                var qTitle = PackageHubUIStyle.CreateIconLabel("⚡ QUICK LAUNCH DASHBOARDS — INSTANT 1-CLICK ACCESS", "hub-quickbar-title");
                 qTitle.style.fontSize = 11;
                 qTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
                 qTitle.style.color = new StyleColor(PackageHubUIStyle.ColAccent);
@@ -623,11 +622,9 @@ namespace Wagenheimer.PackageHub.Editor
                     var chip = new Button(() =>
                     {
                         PackageDashboardLauncher.Launch(dash.PrimaryDashboard);
-                    })
-                    {
-                        text = $"{dash.Icon}  {dash.DisplayName}"
-                    };
+                    });
                     chip.AddToClassList("hub-chip-btn");
+                    PackageHubUIStyle.ApplyIconText(chip, $"{dash.Icon} {dash.DisplayName}");
                     chip.style.backgroundColor = new StyleColor(new Color(0.14f, 0.16f, 0.22f));
                     chip.style.borderTopWidth = 1;
                     chip.style.borderBottomWidth = 1;

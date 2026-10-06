@@ -169,28 +169,21 @@ namespace Wagenheimer.PackageHub.Editor
             subtitleLabel.style.marginTop = 3;
             titleGroup.Add(subtitleLabel);
 
-            // Web links below title
+            // Web links below title. The icon is its own element (see CreateHeaderLink) so it can't overlap the text.
             var linksRow = new VisualElement();
             linksRow.AddToClassList("hub-header-links");
             linksRow.style.flexDirection = FlexDirection.Row;
             linksRow.style.alignItems = Align.Center;
             linksRow.style.marginTop = 6;
 
-            var webLink = new Label("🌐 wagenheimer.com ↗");
-            webLink.AddToClassList("hub-header-link");
+            var webLink = CreateHeaderLink("🌐", "wagenheimer.com ↗", "https://wagenheimer.com", 14);
             webLink.style.fontSize = 11;
-            webLink.style.color = new StyleColor(ColAccent);
             webLink.style.unityFontStyleAndWeight = FontStyle.Bold;
-            webLink.style.marginRight = 14;
-            webLink.RegisterCallback<ClickEvent>(_ => Application.OpenURL("https://wagenheimer.com"));
             linksRow.Add(webLink);
 
-            var ghLink = new Label("GitHub Profile ↗");
-            ghLink.AddToClassList("hub-header-link");
+            var ghLink = CreateHeaderLink(null, "GitHub Profile ↗", "https://github.com/wagenheimer", 0);
             ghLink.style.fontSize = 11;
-            ghLink.style.color = new StyleColor(ColAccent);
             ghLink.style.unityFontStyleAndWeight = FontStyle.Bold;
-            ghLink.RegisterCallback<ClickEvent>(_ => Application.OpenURL("https://github.com/wagenheimer"));
             linksRow.Add(ghLink);
 
             titleGroup.Add(linksRow);
@@ -439,7 +432,8 @@ namespace Wagenheimer.PackageHub.Editor
 
         public static Button CreateButton(string text, string styleClass, Action onClick)
         {
-            var btn = new Button(onClick) { text = text };
+            var btn = new Button(onClick);
+            ApplyIconText(btn, text);
             btn.AddToClassList("hub-btn");
             btn.style.SetRadius(5);
             btn.style.paddingTop = 5;
@@ -498,5 +492,131 @@ namespace Wagenheimer.PackageHub.Editor
             }
             return btn;
         }
+
+        /// <summary>
+        /// Renders <paramref name="text"/> on the button, splitting a leading icon (emoji/symbol) into its own
+        /// element with a reserved width. Rendered inline, a fallback emoji glyph draws wider than it measures,
+        /// so the following text runs over it ("◻heck Updates"); a separate, min-width'd element keeps them apart.
+        /// </summary>
+        public static void ApplyIconText(Button button, string text)
+        {
+            // Idempotent: drop icon/text children from a previous call so live updates (e.g. the busy
+            // spinner) can re-apply without stacking duplicate labels.
+            for (int i = button.childCount - 1; i >= 0; i--)
+            {
+                var child = button[i];
+                if (child.ClassListContains("hub-btn-icon") || child.ClassListContains("hub-btn-text"))
+                    child.RemoveFromHierarchy();
+            }
+
+            SplitLeadingIcon(text, out var icon, out var label);
+
+            if (string.IsNullOrEmpty(icon))
+            {
+                button.text = text;
+                return;
+            }
+
+            button.text = string.Empty;
+            var iconElement = CreateIconElement(icon);
+            if (string.IsNullOrEmpty(label)) iconElement.style.marginRight = 0;
+            button.Add(iconElement);
+
+            if (!string.IsNullOrEmpty(label))
+            {
+                var textLabel = new Label(label);
+                textLabel.AddToClassList("hub-btn-text");
+                textLabel.pickingMode = PickingMode.Ignore;
+                button.Add(textLabel);
+            }
+        }
+
+        private static Label CreateIconElement(string icon)
+        {
+            var iconLabel = new Label(icon);
+            iconLabel.AddToClassList("hub-btn-icon");
+            iconLabel.pickingMode = PickingMode.Ignore;
+            return iconLabel;
+        }
+
+        /// <summary>
+        /// A label whose leading icon is a separate element (same overlap fix as buttons). The returned
+        /// element is styled as usual: text color/font properties inherit down to the child label.
+        /// </summary>
+        public static VisualElement CreateIconLabel(string text, string className = null)
+        {
+            SplitLeadingIcon(text, out var icon, out var rest);
+
+            if (string.IsNullOrEmpty(icon))
+            {
+                var plain = new Label(text);
+                if (className != null) plain.AddToClassList(className);
+                return plain;
+            }
+
+            var row = new VisualElement();
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.alignItems = Align.Center;
+            if (className != null) row.AddToClassList(className);
+
+            row.Add(CreateIconElement(icon));
+
+            var label = new Label(rest);
+            label.pickingMode = PickingMode.Ignore;
+            row.Add(label);
+            return row;
+        }
+
+        /// <summary>A clickable header link: the icon and the label as separate elements, so they never overlap.</summary>
+        private static VisualElement CreateHeaderLink(string icon, string text, string url, float marginRight)
+        {
+            var link = new VisualElement();
+            link.AddToClassList("hub-header-link");
+            link.style.flexDirection = FlexDirection.Row;
+            link.style.alignItems = Align.Center;
+            link.style.marginRight = marginRight;
+            link.RegisterCallback<ClickEvent>(_ => Application.OpenURL(url));
+
+            if (!string.IsNullOrEmpty(icon))
+                link.Add(CreateIconElement(icon));
+
+            var label = new Label(text);
+            label.pickingMode = PickingMode.Ignore;
+            link.Add(label);
+            return link;
+        }
+
+        /// <summary>
+        /// Splits a leading run of icon code points from the rest of a label. Deliberately conservative: only
+        /// arrows/symbols and pictographic emoji count, so ordinary words (including accented ones) stay intact.
+        /// </summary>
+        internal static void SplitLeadingIcon(string text, out string icon, out string label)
+        {
+            icon = null;
+            label = text;
+            if (string.IsNullOrEmpty(text)) return;
+
+            int i = 0;
+            while (i < text.Length)
+            {
+                int codePoint = char.IsHighSurrogate(text[i]) && i + 1 < text.Length
+                    ? char.ConvertToUtf32(text[i], text[i + 1])
+                    : text[i];
+
+                if (!IsIconCodePoint(codePoint)) break;
+                i += char.IsHighSurrogate(text[i]) ? 2 : 1;
+            }
+
+            if (i == 0) return;
+
+            icon = text.Substring(0, i).TrimEnd();
+            label = text.Substring(i).TrimStart();
+        }
+
+        private static bool IsIconCodePoint(int codePoint) =>
+            (codePoint >= 0x2190 && codePoint <= 0x2BFF)   // arrows, geometric shapes, misc symbols (↗ ▶ ▼ ⚡ ✔ ⚙ ✓ ✕ …)
+            || (codePoint >= 0x1F000 && codePoint <= 0x1FAFF) // emoji & pictographs (🔄 🌐 📦 🔍 🐙 💼 …)
+            || codePoint == 0xFE0F                            // emoji variation selector (✉️ 🛠️ …)
+            || codePoint == 0x20E3;                           // combining enclosing keycap
     }
 }
