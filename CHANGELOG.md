@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.5] - 2026-10-05
+
+### Fixed
+- **Leading icons overlapping button/link text**: an inline emoji in a UI Toolkit `Button.text` draws wider than it measures on Windows, so the label ran over the icon (e.g. "heck Updates" over the update glyph). A leading icon is now split into its own element with a reserved `min-width` for buttons, header links, section titles and the live "Installing..." button.
+
 ## [1.3.3] - 2026-09-28
 
 ### Fixed

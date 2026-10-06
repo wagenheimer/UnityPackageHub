@@ -1,6 +1,6 @@
 {
   "name": "com.wagenheimer.packagehub",
-  "version": "1.3.4",
+  "version": "1.3.5",
   "displayName": "Wagenheimer Package Hub",
   "description": "Unified package manager, update checker, dashboard center, and ecosystem catalog for Wagenheimer Unity packages. Built with Unity UI Toolkit, featuring automatic dashboard launching and deep ecosystem integration.",
   "unity": "2021.3",
