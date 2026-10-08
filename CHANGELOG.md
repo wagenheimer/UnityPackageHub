@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.7] - 2026-10-08
+
+### Added
+- feat(editor): `EditorWindowPlacement` (`EnsureOnScreen`, `Center`, pure `ComputeVisibleRect`) so package dashboards never open off-screen (disconnected monitor / invalid saved position). Shared by the Wagenheimer packages instead of per-package copies.
+
 ## [1.3.6] - 2026-10-05
 
 ### Documentation
