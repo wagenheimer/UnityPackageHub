@@ -159,6 +159,9 @@
     min-height: 58px;
     height: 58px;
     margin-bottom: 12px;
+    /* Cancels the outer half-gap of the cards below (UI Toolkit has no :last-child). */
+    margin-left: -4px;
+    margin-right: -4px;
 }
 
 .hub-metric-card {
@@ -175,11 +178,8 @@
     border-width: 1px;
     border-radius: 7px;
     padding: 6px 10px;
-    margin-right: 8px;
-}
-
-.hub-metric-card:last-child {
-    margin-right: 0;
+    margin-left: 4px;
+    margin-right: 4px;
 }
 
 .hub-metric-value {
