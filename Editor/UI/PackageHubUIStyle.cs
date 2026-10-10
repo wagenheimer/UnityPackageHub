@@ -72,6 +72,8 @@ namespace Wagenheimer.PackageHub.Editor
             }
         }
 
+        private const float HeaderButtonMinWidth = 150f;
+
         public static VisualElement CreateHeader(
             string title,
             string subtitle,
@@ -106,17 +108,17 @@ namespace Wagenheimer.PackageHub.Editor
             var topRow = new VisualElement();
             topRow.AddToClassList("hub-header-top");
             topRow.style.flexDirection = FlexDirection.Row;
-            topRow.style.flexWrap = Wrap.Wrap;
             topRow.style.justifyContent = Justify.SpaceBetween;
-            topRow.style.alignItems = Align.Center;
+            topRow.style.alignItems = Align.FlexStart;
 
             // Left: Title + Author badge
             var titleGroup = new VisualElement();
             titleGroup.AddToClassList("hub-title-group");
             titleGroup.style.flexDirection = FlexDirection.Column;
             titleGroup.style.flexShrink = 1;
-            titleGroup.style.marginRight = 10;
-            titleGroup.style.marginBottom = 4;
+            titleGroup.style.flexGrow = 1;
+            titleGroup.style.minWidth = 0;
+            titleGroup.style.marginRight = 12;
 
             var titleRow = new VisualElement();
             titleRow.AddToClassList("hub-title-row");
@@ -193,9 +195,10 @@ namespace Wagenheimer.PackageHub.Editor
             var actionsGroup = new VisualElement();
             actionsGroup.AddToClassList("hub-header-actions");
             actionsGroup.style.flexDirection = FlexDirection.Row;
-            actionsGroup.style.flexWrap = Wrap.Wrap;
+            actionsGroup.style.flexWrap = Wrap.NoWrap;
             actionsGroup.style.flexShrink = 0;
             actionsGroup.style.alignItems = Align.Center;
+            actionsGroup.style.alignSelf = Align.FlexStart;
 
             var checkText = isChecking ? $"{currentSpinner ?? "⠋"} Checking..." : "🔄 Check Updates";
             var checkBtn = CreateButton(
@@ -204,6 +207,8 @@ namespace Wagenheimer.PackageHub.Editor
                 onCheckUpdates);
             checkBtn.SetEnabled(!isChecking && !PackageInstaller.IsBusy);
             checkBtn.style.height = 28;
+            checkBtn.style.minWidth = HeaderButtonMinWidth;
+            checkBtn.style.marginLeft = 0;
             actionsGroup.Add(checkBtn);
 
             if (updateCount > 0 || PackageInstaller.IsBusy)
@@ -226,6 +231,7 @@ namespace Wagenheimer.PackageHub.Editor
                     onUpdateAll);
                 updateAllBtn.SetEnabled(!PackageInstaller.IsBusy);
                 updateAllBtn.style.height = 28;
+                updateAllBtn.style.minWidth = HeaderButtonMinWidth;
                 updateAllBtn.style.marginLeft = 8;
                 actionsGroup.Add(updateAllBtn);
             }
