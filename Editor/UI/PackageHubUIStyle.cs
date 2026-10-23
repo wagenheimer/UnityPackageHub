@@ -108,6 +108,7 @@ namespace Wagenheimer.PackageHub.Editor
             var topRow = new VisualElement();
             topRow.AddToClassList("hub-header-top");
             topRow.style.flexDirection = FlexDirection.Row;
+            topRow.style.flexWrap = Wrap.Wrap;
             topRow.style.justifyContent = Justify.SpaceBetween;
             topRow.style.alignItems = Align.FlexStart;
 
@@ -117,8 +118,9 @@ namespace Wagenheimer.PackageHub.Editor
             titleGroup.style.flexDirection = FlexDirection.Column;
             titleGroup.style.flexShrink = 1;
             titleGroup.style.flexGrow = 1;
-            titleGroup.style.minWidth = 0;
-            titleGroup.style.marginRight = 12;
+            titleGroup.style.minWidth = 280;
+            titleGroup.style.marginRight = 16;
+            titleGroup.style.marginBottom = 6;
 
             var titleRow = new VisualElement();
             titleRow.AddToClassList("hub-title-row");
@@ -131,6 +133,7 @@ namespace Wagenheimer.PackageHub.Editor
             titleLabel.style.fontSize = 17;
             titleLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
             titleLabel.style.color = new StyleColor(ColTextWhite);
+            titleLabel.style.whiteSpace = WhiteSpace.Normal;
             titleRow.Add(titleLabel);
 
             var authorBadge = new Label("by Cezar Wagenheimer");
@@ -199,6 +202,22 @@ namespace Wagenheimer.PackageHub.Editor
             actionsGroup.style.flexShrink = 0;
             actionsGroup.style.alignItems = Align.Center;
             actionsGroup.style.alignSelf = Align.FlexStart;
+            actionsGroup.style.marginLeft = 16;
+            actionsGroup.style.marginTop = 2;
+            actionsGroup.style.paddingTop = 4;
+            actionsGroup.style.paddingBottom = 4;
+            actionsGroup.style.paddingLeft = 4;
+            actionsGroup.style.paddingRight = 4;
+            actionsGroup.style.backgroundColor = new StyleColor(new Color(0.06f, 0.07f, 0.10f));
+            actionsGroup.style.borderTopWidth = 1;
+            actionsGroup.style.borderBottomWidth = 1;
+            actionsGroup.style.borderLeftWidth = 1;
+            actionsGroup.style.borderRightWidth = 1;
+            actionsGroup.style.borderTopColor = new StyleColor(new Color(0.16f, 0.19f, 0.25f));
+            actionsGroup.style.borderBottomColor = new StyleColor(new Color(0.16f, 0.19f, 0.25f));
+            actionsGroup.style.borderLeftColor = new StyleColor(new Color(0.16f, 0.19f, 0.25f));
+            actionsGroup.style.borderRightColor = new StyleColor(new Color(0.16f, 0.19f, 0.25f));
+            actionsGroup.style.SetRadius(8);
 
             var checkText = isChecking ? $"{currentSpinner ?? "⠋"} Checking..." : "🔄 Check Updates";
             var checkBtn = CreateButton(
@@ -206,7 +225,7 @@ namespace Wagenheimer.PackageHub.Editor
                 "hub-btn-secondary",
                 onCheckUpdates);
             checkBtn.SetEnabled(!isChecking && !PackageInstaller.IsBusy);
-            checkBtn.style.height = 28;
+            checkBtn.style.height = 30;
             checkBtn.style.minWidth = HeaderButtonMinWidth;
             checkBtn.style.marginLeft = 0;
             actionsGroup.Add(checkBtn);
@@ -230,9 +249,9 @@ namespace Wagenheimer.PackageHub.Editor
                     PackageInstaller.IsBusy ? "hub-btn-warning hub-btn-busy" : "hub-btn-warning",
                     onUpdateAll);
                 updateAllBtn.SetEnabled(!PackageInstaller.IsBusy);
-                updateAllBtn.style.height = 28;
+                updateAllBtn.style.height = 30;
                 updateAllBtn.style.minWidth = HeaderButtonMinWidth;
-                updateAllBtn.style.marginLeft = 8;
+                updateAllBtn.style.marginLeft = 6;
                 actionsGroup.Add(updateAllBtn);
             }
 
