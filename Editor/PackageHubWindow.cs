@@ -138,6 +138,7 @@ namespace Wagenheimer.PackageHub.Editor
         private void OnEnable()
         {
             PackageInstaller.OnInstallStateChanged += HandleInstallStateChanged;
+            GoogleDependencyManager.OnDependenciesChanged += HandleDependenciesChanged;
             EditorApplication.update += OnEditorUpdate;
 
             LoadPackageVersion();
@@ -155,11 +156,21 @@ namespace Wagenheimer.PackageHub.Editor
         private void OnDisable()
         {
             PackageInstaller.OnInstallStateChanged -= HandleInstallStateChanged;
+            GoogleDependencyManager.OnDependenciesChanged -= HandleDependenciesChanged;
             EditorApplication.update -= OnEditorUpdate;
         }
 
         private void HandleInstallStateChanged()
         {
+            RebuildHeader();
+            RebuildMetrics();
+            RenderActiveTab();
+        }
+
+        /// <summary>Rebuilds the banner/metrics when a Google migration (or any dependency change) finishes.</summary>
+        private void HandleDependenciesChanged()
+        {
+            if (_headerContainer == null) return;
             RebuildHeader();
             RebuildMetrics();
             RenderActiveTab();
@@ -391,11 +402,12 @@ namespace Wagenheimer.PackageHub.Editor
         private VisualElement BuildGoogleMigrationBanner(GoogleDependencyManager.Diagnosis diag)
         {
             var banner = new VisualElement();
-            banner.style.marginTop = 10;
-            banner.style.paddingTop = 10;
-            banner.style.paddingBottom = 10;
-            banner.style.paddingLeft = 14;
-            banner.style.paddingRight = 14;
+            banner.style.marginTop = 14;
+            banner.style.marginBottom = 14;
+            banner.style.paddingTop = 12;
+            banner.style.paddingBottom = 12;
+            banner.style.paddingLeft = 18;
+            banner.style.paddingRight = 16;
             banner.style.backgroundColor = new StyleColor(new Color(0.25f, 0.16f, 0.04f, 0.95f));
             banner.style.borderTopWidth = 1;
             banner.style.borderBottomWidth = 1;
@@ -416,8 +428,8 @@ namespace Wagenheimer.PackageHub.Editor
             textCol.style.flexShrink = 1;
             textCol.style.flexBasis = 0;
             textCol.style.minWidth = 220;
-            textCol.style.marginRight = 12;
-            textCol.style.marginBottom = 6;
+            textCol.style.marginRight = 20;
+            textCol.style.marginBottom = 0;
 
             var title = PackageHubUIStyle.CreateIconLabel("⚠️ Google & EDM4U: Migration Recommended");
             title.style.fontSize = 12.5f;
@@ -440,7 +452,8 @@ namespace Wagenheimer.PackageHub.Editor
             btnRow.style.flexDirection = FlexDirection.Row;
             btnRow.style.flexWrap = Wrap.Wrap;
             btnRow.style.flexShrink = 0;
-            btnRow.style.marginTop = 6;
+            btnRow.style.marginTop = 0;
+            btnRow.style.marginLeft = 16;
 
             var btnMigrate = PackageHubUIStyle.CreateButton("⚡ Migrate to Clean Git", "hub-btn-warning", () =>
             {
@@ -454,6 +467,9 @@ namespace Wagenheimer.PackageHub.Editor
                         {
                             EditorUtility.DisplayDialog("Migration Complete", "Google dependencies migrated successfully! Unity is now resolving packages via Git.", "OK");
                             RefreshPackages(true);
+                            RebuildHeader();
+                            RebuildMetrics();
+                            RenderActiveTab();
                         }
                         else
                         {
