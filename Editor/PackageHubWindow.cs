@@ -414,7 +414,8 @@ namespace Wagenheimer.PackageHub.Editor
             var textCol = new VisualElement();
             textCol.style.flexGrow = 1;
             textCol.style.flexShrink = 1;
-            textCol.style.minWidth = 200;
+            textCol.style.flexBasis = 0;
+            textCol.style.minWidth = 220;
             textCol.style.marginRight = 12;
             textCol.style.marginBottom = 6;
 
@@ -422,11 +423,14 @@ namespace Wagenheimer.PackageHub.Editor
             title.style.fontSize = 12.5f;
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
             title.style.color = new StyleColor(PackageHubUIStyle.ColAmber);
+            title.style.whiteSpace = WhiteSpace.Normal;
 
             var sub = new Label("RateControl is installed. Migrating Google dependencies to clean official Git URLs removes Scoped Registries and eliminates Unity 'unverified package' warnings.");
             sub.style.fontSize = 10.5f;
             sub.style.color = new StyleColor(PackageHubUIStyle.ColTextWhite);
             sub.style.marginTop = 2;
+            sub.style.whiteSpace = WhiteSpace.Normal;
+            sub.style.flexShrink = 1;
 
             textCol.Add(title);
             textCol.Add(sub);
@@ -436,6 +440,7 @@ namespace Wagenheimer.PackageHub.Editor
             btnRow.style.flexDirection = FlexDirection.Row;
             btnRow.style.flexWrap = Wrap.Wrap;
             btnRow.style.flexShrink = 0;
+            btnRow.style.marginTop = 6;
 
             var btnMigrate = PackageHubUIStyle.CreateButton("⚡ Migrate to Clean Git", "hub-btn-warning", () =>
             {
@@ -457,14 +462,14 @@ namespace Wagenheimer.PackageHub.Editor
                     });
                 }
             });
-            btnMigrate.style.height = 28;
+            btnMigrate.style.height = 30;
 
             var btnDetails = PackageHubUIStyle.CreateButton("Details", "hub-btn-secondary", () =>
             {
                 var issues = string.Join("\n• ", diag.Issues);
                 EditorUtility.DisplayDialog("Google Dependencies Diagnosis", $"Status:\n• {issues}\n\nRecommended: Use official Git repositories to avoid Unity unverified package warnings.", "OK");
             });
-            btnDetails.style.height = 28;
+            btnDetails.style.height = 30;
             btnDetails.style.marginLeft = 6;
 
             btnRow.Add(btnMigrate);
