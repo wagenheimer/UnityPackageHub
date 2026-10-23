@@ -99,18 +99,18 @@ namespace Wagenheimer.PackageHub.Editor
             header.style.borderBottomColor = new StyleColor(ColCardBorder);
             header.style.borderLeftColor = new StyleColor(ColAccent);
             header.style.SetRadius(8);
-            header.style.paddingTop = 14;
-            header.style.paddingBottom = 14;
-            header.style.paddingLeft = 18;
-            header.style.paddingRight = 18;
-            header.style.marginBottom = 12;
+            header.style.paddingTop = 16;
+            header.style.paddingBottom = 18;
+            header.style.paddingLeft = 20;
+            header.style.paddingRight = 20;
+            header.style.marginBottom = 14;
 
             var topRow = new VisualElement();
             topRow.AddToClassList("hub-header-top");
             topRow.style.flexDirection = FlexDirection.Row;
             topRow.style.flexWrap = Wrap.Wrap;
             topRow.style.justifyContent = Justify.SpaceBetween;
-            topRow.style.alignItems = Align.FlexStart;
+            topRow.style.alignItems = Align.Center;
 
             // Left: Title + Author badge
             var titleGroup = new VisualElement();
@@ -120,7 +120,7 @@ namespace Wagenheimer.PackageHub.Editor
             titleGroup.style.flexGrow = 1;
             titleGroup.style.minWidth = 280;
             titleGroup.style.marginRight = 16;
-            titleGroup.style.marginBottom = 6;
+            titleGroup.style.marginBottom = 0;
 
             var titleRow = new VisualElement();
             titleRow.AddToClassList("hub-title-row");
@@ -179,7 +179,7 @@ namespace Wagenheimer.PackageHub.Editor
             linksRow.AddToClassList("hub-header-links");
             linksRow.style.flexDirection = FlexDirection.Row;
             linksRow.style.alignItems = Align.Center;
-            linksRow.style.marginTop = 6;
+            linksRow.style.marginTop = 8;
 
             var webLink = CreateHeaderLink("🌐", "wagenheimer.com ↗", "https://wagenheimer.com", 14);
             webLink.style.fontSize = 11;
@@ -201,23 +201,8 @@ namespace Wagenheimer.PackageHub.Editor
             actionsGroup.style.flexWrap = Wrap.NoWrap;
             actionsGroup.style.flexShrink = 0;
             actionsGroup.style.alignItems = Align.Center;
-            actionsGroup.style.alignSelf = Align.FlexStart;
+            actionsGroup.style.alignSelf = Align.Center;
             actionsGroup.style.marginLeft = 16;
-            actionsGroup.style.marginTop = 2;
-            actionsGroup.style.paddingTop = 4;
-            actionsGroup.style.paddingBottom = 4;
-            actionsGroup.style.paddingLeft = 4;
-            actionsGroup.style.paddingRight = 4;
-            actionsGroup.style.backgroundColor = new StyleColor(new Color(0.06f, 0.07f, 0.10f));
-            actionsGroup.style.borderTopWidth = 1;
-            actionsGroup.style.borderBottomWidth = 1;
-            actionsGroup.style.borderLeftWidth = 1;
-            actionsGroup.style.borderRightWidth = 1;
-            actionsGroup.style.borderTopColor = new StyleColor(new Color(0.16f, 0.19f, 0.25f));
-            actionsGroup.style.borderBottomColor = new StyleColor(new Color(0.16f, 0.19f, 0.25f));
-            actionsGroup.style.borderLeftColor = new StyleColor(new Color(0.16f, 0.19f, 0.25f));
-            actionsGroup.style.borderRightColor = new StyleColor(new Color(0.16f, 0.19f, 0.25f));
-            actionsGroup.style.SetRadius(8);
 
             var checkText = isChecking ? $"{currentSpinner ?? "⠋"} Checking..." : "🔄 Check Updates";
             var checkBtn = CreateButton(
