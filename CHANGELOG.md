@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.13] - 2026-10-26
+
+### Fixed
+- **Migration banner layout**: the amber Google/EDM4U banner no longer squeezes the text next to
+  the buttons. Text and actions are now stacked vertically, and `CreateIconLabel` lets its text
+  child wrap, so the title/subtitle cannot be drawn on top of each other (or of the buttons).
+- **Migration never clearing**: `CleanScopedRegistries` now finds the `scopedRegistries` property by
+  bracket matching instead of a regex that required a trailing comma, so a registry block at the end
+  of `manifest.json`, with nested objects, or with non-Google scopes is handled correctly. The
+  rewritten manifest is validated before writing, Unity is told to re-import it before resolving,
+  and the migration re-runs diagnosis afterwards. If the edit did not stick, the action now reports
+  the actual remaining issues instead of showing "Migration Complete" while the banner stays.
+- Added a **Dismiss** action (session-only) to the migration banner for projects that intentionally
+  keep their scoped registries.
+
 ## [1.3.8] - 2026-10-08
 
 ### Fixed

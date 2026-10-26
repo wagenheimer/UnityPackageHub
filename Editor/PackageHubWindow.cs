@@ -32,6 +32,7 @@ namespace Wagenheimer.PackageHub.Editor
         private bool _isCheckingAll = false;
         private string _targetPackageFocus = null;
         private string _hubVersion = "1.1.0";
+        private bool _migrationBannerDismissed;
 
         private VisualElement _contentContainer;
         private Button[] _tabButtons;
@@ -393,7 +394,7 @@ namespace Wagenheimer.PackageHub.Editor
             _headerContainer.Add(header);
 
             var googleDiag = GoogleDependencyManager.Detect();
-            if (googleDiag.NeedsMigration)
+            if (googleDiag.NeedsMigration && !_migrationBannerDismissed)
             {
                 _headerContainer.Add(BuildGoogleMigrationBanner(googleDiag));
             }
@@ -418,18 +419,19 @@ namespace Wagenheimer.PackageHub.Editor
             banner.style.borderLeftColor = new StyleColor(PackageHubUIStyle.ColAmber);
             banner.style.borderRightColor = new StyleColor(PackageHubUIStyle.ColAmber);
             banner.style.SetRadius(7);
-            banner.style.flexDirection = FlexDirection.Row;
-            banner.style.flexWrap = Wrap.Wrap;
-            banner.style.alignItems = Align.Center;
-            banner.style.justifyContent = Justify.SpaceBetween;
+            // Stack text and actions vertically. Keeping them side by side with flex-basis: 0
+            // collapsed the text column's height on some Unity versions, drawing the title and
+            // subtitle on top of each other (and on top of the buttons).
+            banner.style.flexDirection = FlexDirection.Column;
+            banner.style.alignItems = Align.Stretch;
+            banner.style.justifyContent = Justify.FlexStart;
 
             var textCol = new VisualElement();
+            textCol.style.flexDirection = FlexDirection.Column;
             textCol.style.flexGrow = 1;
             textCol.style.flexShrink = 1;
-            textCol.style.flexBasis = 0;
-            textCol.style.minWidth = 220;
-            textCol.style.marginRight = 20;
-            textCol.style.marginBottom = 0;
+            textCol.style.marginRight = 0;
+            textCol.style.marginBottom = 10;
 
             var title = PackageHubUIStyle.CreateIconLabel("⚠️ Google & EDM4U: Migration Recommended");
             title.style.fontSize = 12.5f;
@@ -452,8 +454,9 @@ namespace Wagenheimer.PackageHub.Editor
             btnRow.style.flexDirection = FlexDirection.Row;
             btnRow.style.flexWrap = Wrap.Wrap;
             btnRow.style.flexShrink = 0;
+            btnRow.style.justifyContent = Justify.FlexEnd;
             btnRow.style.marginTop = 0;
-            btnRow.style.marginLeft = 16;
+            btnRow.style.marginLeft = 0;
 
             var btnMigrate = PackageHubUIStyle.CreateButton("⚡ Migrate to Clean Git", "hub-btn-warning", () =>
             {
@@ -488,8 +491,17 @@ namespace Wagenheimer.PackageHub.Editor
             btnDetails.style.height = 30;
             btnDetails.style.marginLeft = 6;
 
+            var btnDismiss = PackageHubUIStyle.CreateButton("Dismiss", "hub-btn-secondary", () =>
+            {
+                _migrationBannerDismissed = true;
+                RebuildHeader();
+            });
+            btnDismiss.style.height = 30;
+            btnDismiss.style.marginLeft = 6;
+
             btnRow.Add(btnMigrate);
             btnRow.Add(btnDetails);
+            btnRow.Add(btnDismiss);
             banner.Add(btnRow);
 
             return banner;

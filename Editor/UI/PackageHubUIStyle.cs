@@ -567,12 +567,15 @@ namespace Wagenheimer.PackageHub.Editor
             var row = new VisualElement();
             row.style.flexDirection = FlexDirection.Row;
             row.style.alignItems = Align.Center;
+            row.style.flexShrink = 1;
             if (className != null) row.AddToClassList(className);
 
             row.Add(CreateIconElement(icon));
 
             var label = new Label(rest);
             label.pickingMode = PickingMode.Ignore;
+            label.style.whiteSpace = WhiteSpace.Normal;
+            label.style.flexShrink = 1;
             row.Add(label);
             return row;
         }
