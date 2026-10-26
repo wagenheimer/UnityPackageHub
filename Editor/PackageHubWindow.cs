@@ -827,7 +827,12 @@ namespace Wagenheimer.PackageHub.Editor
             chipRow.style.flexDirection = FlexDirection.Row;
             chipRow.style.alignItems = Align.Center;
 
-            var categories = new[] { "All", "Core Tools", "Monetization", "Build & CI", "Storage & Cloud", "Engagement", "Input" };
+            var categories = new List<string> { "All" };
+            foreach (var known in PackageCatalog.KnownPackages)
+            {
+                if (!string.IsNullOrEmpty(known.Category) && !categories.Contains(known.Category))
+                    categories.Add(known.Category);
+            }
             foreach (var cat in categories)
             {
                 var isSelected = string.Equals(_selectedCategory, cat, StringComparison.OrdinalIgnoreCase);

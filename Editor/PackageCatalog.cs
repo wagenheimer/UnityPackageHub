@@ -223,6 +223,17 @@ namespace Wagenheimer.PackageHub.Editor
                 DefaultBranch = "main",
                 Category = "Migration & Tools",
                 ReleaseDateString = "2026-09-20T10:00:00Z"
+            },
+            new PackageItem
+            {
+                PackageId = "com.wagenheimer.i2localization",
+                DisplayName = "I2 Localization (private)",
+                Description = "Private I2 Localization 2.8.22 f6 fork with Unity 6 fixes, a UI Toolkit term editor, Google Sheets Merge import/export, AI translation and scene preview. Private: requires a licensed I2 seat.",
+                RepoUrl = "https://github.com/wagenheimer/UnityI2Localization",
+                GitUrl = "https://github.com/wagenheimer/UnityI2Localization.git",
+                DefaultBranch = "main",
+                Category = "Localization",
+                ReleaseDateString = "2026-10-26T18:00:00Z"
             }
         };
     }

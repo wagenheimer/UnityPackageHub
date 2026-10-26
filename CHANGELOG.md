@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.14] - 2026-10-26
+
+### Added
+- **I2 Localization (private)** in the catalog (`com.wagenheimer.i2localization`), so the private
+  I2 fork gets the same version check and one-click update as every other Wagenheimer package.
+  The repository is private and requires a licensed I2 Localization seat.
+
+### Changed
+- The category filter chips are now built from the catalog instead of a hardcoded list, so new
+  categories (such as **Localization**) show up without touching the window code.
+
 ## [1.3.13] - 2026-10-26
 
 ### Fixed
