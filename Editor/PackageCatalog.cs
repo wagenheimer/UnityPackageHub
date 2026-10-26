@@ -234,6 +234,17 @@ namespace Wagenheimer.PackageHub.Editor
                 DefaultBranch = "main",
                 Category = "Localization",
                 ReleaseDateString = "2026-10-26T18:00:00Z"
+            },
+            new PackageItem
+            {
+                PackageId = "com.wagenheimer.i2localization.migrator",
+                DisplayName = "I2 Localization Migrator",
+                Description = "One-time assistant: detects a legacy Assets/I2 install, backs it up outside the project assets, keeps the I2Languages asset and installs com.wagenheimer.i2localization. Install it only while the project still has the old I2 source.",
+                RepoUrl = "https://github.com/wagenheimer/UnityI2LocalizationMigrator",
+                GitUrl = "https://github.com/wagenheimer/UnityI2LocalizationMigrator.git",
+                DefaultBranch = "main",
+                Category = "Localization",
+                ReleaseDateString = "2026-10-26T20:10:00Z"
             }
         };
     }
