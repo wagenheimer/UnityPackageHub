@@ -22,6 +22,11 @@ namespace Wagenheimer.PackageHub.Editor
             }
 
             int remaining = packages.Count;
+            Action done = () =>
+            {
+                remaining--;
+                if (remaining <= 0) onComplete?.Invoke();
+            };
 
             foreach (var item in packages)
             {
@@ -30,56 +35,19 @@ namespace Wagenheimer.PackageHub.Editor
 
                 var url = item.GetRawPackageJsonUrl();
                 var req = UnityWebRequest.Get(url);
+                req.timeout = 10;
                 var op = req.SendWebRequest();
 
                 op.completed += _ =>
                 {
+                    string version = null;
+
                     try
                     {
                         if (req.result == UnityWebRequest.Result.Success && !string.IsNullOrEmpty(req.downloadHandler?.text))
                         {
                             var json = JsonUtility.FromJson<RemotePackageJson>(req.downloadHandler.text);
-                            if (json != null && !string.IsNullOrEmpty(json.version))
-                            {
-                                var remoteVer = PackageDiscovery.CleanVersion(json.version);
-                                item.LatestRemoteVersion = remoteVer;
-
-                                if (item.IsInstalled && !string.IsNullOrEmpty(item.InstalledVersion))
-                                {
-                                    item.HasUpdate = IsNewerVersion(remoteVer, item.InstalledVersion);
-                                }
-                                else
-                                {
-                                    item.HasUpdate = false;
-                                }
-
-                                if (item.HasUpdate)
-                                {
-                                    // Fetch Changelog and commit date
-                                    FetchChangelog(item, () =>
-                                    {
-                                        FetchLatestCommitDate(item, () =>
-                                        {
-                                            item.IsChecking = false;
-                                            remaining--;
-                                            if (remaining <= 0) onComplete?.Invoke();
-                                        });
-                                    });
-                                    req.Dispose();
-                                    return;
-                                }
-                                else
-                                {
-                                    FetchLatestCommitDate(item, () =>
-                                    {
-                                        item.IsChecking = false;
-                                        remaining--;
-                                        if (remaining <= 0) onComplete?.Invoke();
-                                    });
-                                    req.Dispose();
-                                    return;
-                                }
-                            }
+                            if (json != null) version = json.version;
                         }
                     }
                     catch (Exception ex)
@@ -91,13 +59,106 @@ namespace Wagenheimer.PackageHub.Editor
                         req.Dispose();
                     }
 
-                    item.IsChecking = false;
-                    remaining--;
-                    if (remaining <= 0)
+                    if (!string.IsNullOrEmpty(version))
                     {
-                        onComplete?.Invoke();
+                        ApplyRemoteVersion(item, PackageDiscovery.CleanVersion(version), done);
+                        return;
                     }
+
+                    // Private repositories answer 404 on raw.githubusercontent.com without
+                    // a token, but the machine's git credentials can list the tags — the
+                    // same credentials UPM uses to install the package.
+                    ResolveLatestTagAsync(item.GitUrl, tag =>
+                    {
+                        if (string.IsNullOrEmpty(tag))
+                        {
+                            item.IsChecking = false;
+                            done();
+                            return;
+                        }
+
+                        ApplyRemoteVersion(item, PackageDiscovery.CleanVersion(tag), done);
+                    });
                 };
+            }
+        }
+
+        static void ApplyRemoteVersion(PackageItem item, string version, Action done)
+        {
+            item.LatestRemoteVersion = version;
+            item.HasUpdate = item.IsInstalled &&
+                             !string.IsNullOrEmpty(item.InstalledVersion) &&
+                             IsNewerVersion(version, item.InstalledVersion);
+
+            FetchChangelog(item, () => FetchLatestCommitDate(item, () =>
+            {
+                item.IsChecking = false;
+                done();
+            }));
+        }
+
+        /// <summary>
+        /// Reads the highest tag of a git repository with the system git, so update
+        /// checks also work for private repositories.
+        /// </summary>
+        static void ResolveLatestTagAsync(string gitUrl, Action<string> onDone)
+        {
+            if (string.IsNullOrEmpty(gitUrl))
+            {
+                onDone(null);
+                return;
+            }
+
+            string url = gitUrl;
+            int hash = url.IndexOf('#');
+            if (hash >= 0) url = url.Substring(0, hash);
+
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                string tag = TryReadLatestTag(url);
+                UnityEditor.EditorApplication.delayCall += () => onDone(tag);
+            });
+        }
+
+        static string TryReadLatestTag(string url)
+        {
+            try
+            {
+                var info = new System.Diagnostics.ProcessStartInfo("git", "ls-remote --tags --refs \"" + url + "\"")
+                {
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using (var process = System.Diagnostics.Process.Start(info))
+                {
+                    if (process == null) return null;
+
+                    string output = process.StandardOutput.ReadToEnd();
+                    process.WaitForExit(15000);
+
+                    string best = null;
+                    foreach (string line in output.Split('\n'))
+                    {
+                        int index = line.IndexOf("refs/tags/", StringComparison.Ordinal);
+                        if (index < 0) continue;
+
+                        string tag = line.Substring(index + "refs/tags/".Length).Trim();
+                        if (string.IsNullOrEmpty(tag) || tag.EndsWith("^{}", StringComparison.Ordinal)) continue;
+
+                        if (best == null ||
+                            IsNewerVersion(PackageDiscovery.CleanVersion(tag), PackageDiscovery.CleanVersion(best)))
+                            best = tag;
+                    }
+
+                    return best;
+                }
+            }
+            catch
+            {
+                return null;
             }
         }
 

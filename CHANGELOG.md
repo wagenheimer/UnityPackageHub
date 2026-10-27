@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.16] - 2026-10-26
+
+### Fixed
+- **Update checks for private repositories.** `raw.githubusercontent.com` answers 404 without a token,
+  so packages like the private I2 Localization fork could never be checked. When the raw
+  `package.json` cannot be read, the Hub now lists the repository tags with the system `git`
+  (the same credentials UPM uses) and picks the highest one. Release notes stay empty for those
+  repositories, but the version comparison and the one-click update work.
+
 ## [1.3.15] - 2026-10-26
 
 ### Added
