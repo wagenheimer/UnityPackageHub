@@ -68,7 +68,7 @@ namespace Wagenheimer.PackageHub.Editor
                     // Private repositories answer 404 on raw.githubusercontent.com without
                     // a token, but the machine's git credentials can list the tags — the
                     // same credentials UPM uses to install the package.
-                    ResolveLatestTagAsync(item.GitUrl, tag =>
+                    ResolveLatestTag(item.GitUrl, tag =>
                     {
                         if (string.IsNullOrEmpty(tag))
                         {
@@ -99,10 +99,11 @@ namespace Wagenheimer.PackageHub.Editor
 
         /// <summary>
         /// Reads the highest tag of a git repository with the system git, so update
-        /// checks also work for private repositories. The git process runs off the
-        /// main thread, but the result is always delivered on it.
+        /// checks also work for private repositories. The call is synchronous
+        /// (about a second) because Unity's delayed callbacks are not reliable while
+        /// a window is being built.
         /// </summary>
-        static void ResolveLatestTagAsync(string gitUrl, Action<string> onDone)
+        static void ResolveLatestTag(string gitUrl, Action<string> onDone)
         {
             if (string.IsNullOrEmpty(gitUrl))
             {
@@ -114,29 +115,7 @@ namespace Wagenheimer.PackageHub.Editor
             int hash = url.IndexOf('#');
             if (hash >= 0) url = url.Substring(0, hash);
 
-            string found = null;
-            var task = System.Threading.Tasks.Task.Run(() => { found = TryReadLatestTag(url); });
-
-            double deadline = UnityEditor.EditorApplication.timeSinceStartup + 20d;
-
-            void Poll()
-            {
-                if (!task.IsCompleted)
-                {
-                    if (UnityEditor.EditorApplication.timeSinceStartup < deadline)
-                    {
-                        UnityEditor.EditorApplication.delayCall += Poll;
-                        return;
-                    }
-
-                    onDone(null);
-                    return;
-                }
-
-                onDone(found);
-            }
-
-            UnityEditor.EditorApplication.delayCall += Poll;
+            onDone(TryReadLatestTag(url));
         }
 
         static string TryReadLatestTag(string url)
