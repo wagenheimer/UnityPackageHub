@@ -99,7 +99,8 @@ namespace Wagenheimer.PackageHub.Editor
 
         /// <summary>
         /// Reads the highest tag of a git repository with the system git, so update
-        /// checks also work for private repositories.
+        /// checks also work for private repositories. The git process runs off the
+        /// main thread, but the result is always delivered on it.
         /// </summary>
         static void ResolveLatestTagAsync(string gitUrl, Action<string> onDone)
         {
@@ -113,11 +114,29 @@ namespace Wagenheimer.PackageHub.Editor
             int hash = url.IndexOf('#');
             if (hash >= 0) url = url.Substring(0, hash);
 
-            System.Threading.Tasks.Task.Run(() =>
+            string found = null;
+            var task = System.Threading.Tasks.Task.Run(() => { found = TryReadLatestTag(url); });
+
+            double deadline = UnityEditor.EditorApplication.timeSinceStartup + 20d;
+
+            void Poll()
             {
-                string tag = TryReadLatestTag(url);
-                UnityEditor.EditorApplication.delayCall += () => onDone(tag);
-            });
+                if (!task.IsCompleted)
+                {
+                    if (UnityEditor.EditorApplication.timeSinceStartup < deadline)
+                    {
+                        UnityEditor.EditorApplication.delayCall += Poll;
+                        return;
+                    }
+
+                    onDone(null);
+                    return;
+                }
+
+                onDone(found);
+            }
+
+            UnityEditor.EditorApplication.delayCall += Poll;
         }
 
         static string TryReadLatestTag(string url)
