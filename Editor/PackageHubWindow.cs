@@ -279,6 +279,8 @@ namespace Wagenheimer.PackageHub.Editor
 
             // 1. Header Banner
             _headerContainer = new VisualElement();
+            _headerContainer.AddToClassList("hub-header-container");
+            _headerContainer.style.flexShrink = 0;
             root.Add(_headerContainer);
             RebuildHeader();
 

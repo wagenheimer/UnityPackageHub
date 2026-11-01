@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.19] - 2026-11-01
+
+### Fixed
+- **Fully responsive and collision-free header**: Completely redesigned the header layout in `PackageHubUIStyle.cs` and `PackageHubCommon.uss`. Fixed Yoga flex shrinking bugs where labels and badges overlapped horizontally and vertically on window resizing. Added `flexShrink = 0` protection to title, badges, links, and action buttons, wrapped badges into a dedicated wrap container with safe margins, aligned flex items to top with wrap safety, and prevented vertical collapse with `flex-shrink: 0` on header containers.
+
 ## [1.3.18] - 2026-10-26
 
 ### Fixed

@@ -89,6 +89,7 @@ namespace Wagenheimer.PackageHub.Editor
         {
             var header = new VisualElement();
             header.AddToClassList("hub-header");
+            header.style.flexShrink = 0;
             header.style.backgroundColor = new StyleColor(ColCardBg);
             header.style.borderTopWidth = 1;
             header.style.borderRightWidth = 1;
@@ -99,42 +100,52 @@ namespace Wagenheimer.PackageHub.Editor
             header.style.borderBottomColor = new StyleColor(ColCardBorder);
             header.style.borderLeftColor = new StyleColor(ColAccent);
             header.style.SetRadius(8);
-            header.style.paddingTop = 16;
-            header.style.paddingBottom = 18;
-            header.style.paddingLeft = 20;
-            header.style.paddingRight = 20;
-            header.style.marginBottom = 14;
+            header.style.paddingTop = 14;
+            header.style.paddingBottom = 14;
+            header.style.paddingLeft = 16;
+            header.style.paddingRight = 16;
+            header.style.marginBottom = 12;
 
             var topRow = new VisualElement();
             topRow.AddToClassList("hub-header-top");
             topRow.style.flexDirection = FlexDirection.Row;
             topRow.style.flexWrap = Wrap.Wrap;
             topRow.style.justifyContent = Justify.SpaceBetween;
-            topRow.style.alignItems = Align.Center;
+            topRow.style.alignItems = Align.FlexStart;
 
-            // Left: Title + Author badge
+            // Left: Title + Author badge + Subtitle + Links
             var titleGroup = new VisualElement();
             titleGroup.AddToClassList("hub-title-group");
             titleGroup.style.flexDirection = FlexDirection.Column;
             titleGroup.style.flexShrink = 1;
             titleGroup.style.flexGrow = 1;
-            titleGroup.style.minWidth = 280;
-            titleGroup.style.marginRight = 16;
-            titleGroup.style.marginBottom = 0;
+            titleGroup.style.minWidth = 200;
+            titleGroup.style.marginRight = 12;
+            titleGroup.style.marginBottom = 6;
 
             var titleRow = new VisualElement();
             titleRow.AddToClassList("hub-title-row");
             titleRow.style.flexDirection = FlexDirection.Row;
             titleRow.style.flexWrap = Wrap.Wrap;
             titleRow.style.alignItems = Align.Center;
+            titleRow.style.marginBottom = 4;
 
             var titleLabel = new Label(title);
             titleLabel.AddToClassList("hub-title");
-            titleLabel.style.fontSize = 17;
+            titleLabel.style.fontSize = 16;
             titleLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
             titleLabel.style.color = new StyleColor(ColTextWhite);
-            titleLabel.style.whiteSpace = WhiteSpace.Normal;
+            titleLabel.style.flexShrink = 0;
+            titleLabel.style.marginRight = 10;
+            titleLabel.style.marginBottom = 4;
             titleRow.Add(titleLabel);
+
+            var badgesContainer = new VisualElement();
+            badgesContainer.AddToClassList("hub-badges-container");
+            badgesContainer.style.flexDirection = FlexDirection.Row;
+            badgesContainer.style.flexWrap = Wrap.Wrap;
+            badgesContainer.style.alignItems = Align.Center;
+            badgesContainer.style.flexShrink = 0;
 
             var authorBadge = new Label("by Cezar Wagenheimer");
             authorBadge.AddToClassList("hub-author-badge");
@@ -152,36 +163,45 @@ namespace Wagenheimer.PackageHub.Editor
             authorBadge.style.paddingBottom = 2;
             authorBadge.style.paddingLeft = 8;
             authorBadge.style.paddingRight = 8;
-            authorBadge.style.marginLeft = 10;
+            authorBadge.style.marginRight = 6;
+            authorBadge.style.marginBottom = 4;
+            authorBadge.style.marginLeft = 0;
             authorBadge.style.fontSize = 10;
             authorBadge.style.unityFontStyleAndWeight = FontStyle.Bold;
             authorBadge.style.color = new StyleColor(ColAccent);
-            titleRow.Add(authorBadge);
+            authorBadge.style.flexShrink = 0;
+            badgesContainer.Add(authorBadge);
 
             if (!string.IsNullOrEmpty(version))
             {
                 var verBadge = CreateBadge($"v{version}", "hub-badge-info");
-                verBadge.style.marginLeft = 6;
-                titleRow.Add(verBadge);
+                verBadge.style.flexShrink = 0;
+                verBadge.style.marginBottom = 4;
+                verBadge.style.marginLeft = 0;
+                badgesContainer.Add(verBadge);
             }
 
+            titleRow.Add(badgesContainer);
             titleGroup.Add(titleRow);
 
             var subtitleLabel = new Label(subtitle);
             subtitleLabel.AddToClassList("hub-subtitle");
             subtitleLabel.style.fontSize = 11;
             subtitleLabel.style.color = new StyleColor(ColTextMuted);
-            subtitleLabel.style.marginTop = 3;
+            subtitleLabel.style.whiteSpace = WhiteSpace.Normal;
+            subtitleLabel.style.marginTop = 2;
+            subtitleLabel.style.marginBottom = 8;
             titleGroup.Add(subtitleLabel);
 
-            // Web links below title. The icon is its own element (see CreateHeaderLink) so it can't overlap the text.
+            // Web links below title
             var linksRow = new VisualElement();
             linksRow.AddToClassList("hub-header-links");
             linksRow.style.flexDirection = FlexDirection.Row;
+            linksRow.style.flexWrap = Wrap.Wrap;
             linksRow.style.alignItems = Align.Center;
-            linksRow.style.marginTop = 8;
+            linksRow.style.marginTop = 2;
 
-            var webLink = CreateHeaderLink("🌐", "wagenheimer.com ↗", "https://wagenheimer.com", 14);
+            var webLink = CreateHeaderLink("🌐", "wagenheimer.com ↗", "https://wagenheimer.com", 16);
             webLink.style.fontSize = 11;
             webLink.style.unityFontStyleAndWeight = FontStyle.Bold;
             linksRow.Add(webLink);
@@ -198,11 +218,12 @@ namespace Wagenheimer.PackageHub.Editor
             var actionsGroup = new VisualElement();
             actionsGroup.AddToClassList("hub-header-actions");
             actionsGroup.style.flexDirection = FlexDirection.Row;
-            actionsGroup.style.flexWrap = Wrap.NoWrap;
+            actionsGroup.style.flexWrap = Wrap.Wrap;
             actionsGroup.style.flexShrink = 0;
             actionsGroup.style.alignItems = Align.Center;
-            actionsGroup.style.alignSelf = Align.Center;
-            actionsGroup.style.marginLeft = 16;
+            actionsGroup.style.alignSelf = Align.FlexStart;
+            actionsGroup.style.marginTop = 2;
+            actionsGroup.style.marginBottom = 6;
 
             var checkText = isChecking ? $"{currentSpinner ?? "⠋"} Checking..." : "🔄 Check Updates";
             var checkBtn = CreateButton(
@@ -213,6 +234,9 @@ namespace Wagenheimer.PackageHub.Editor
             checkBtn.style.height = 30;
             checkBtn.style.minWidth = HeaderButtonMinWidth;
             checkBtn.style.marginLeft = 0;
+            checkBtn.style.marginRight = 8;
+            checkBtn.style.marginBottom = 4;
+            checkBtn.style.flexShrink = 0;
             actionsGroup.Add(checkBtn);
 
             if (updateCount > 0 || PackageInstaller.IsBusy)
@@ -236,7 +260,10 @@ namespace Wagenheimer.PackageHub.Editor
                 updateAllBtn.SetEnabled(!PackageInstaller.IsBusy);
                 updateAllBtn.style.height = 30;
                 updateAllBtn.style.minWidth = HeaderButtonMinWidth;
-                updateAllBtn.style.marginLeft = 6;
+                updateAllBtn.style.marginLeft = 0;
+                updateAllBtn.style.marginRight = 0;
+                updateAllBtn.style.marginBottom = 4;
+                updateAllBtn.style.flexShrink = 0;
                 actionsGroup.Add(updateAllBtn);
             }
 
@@ -587,14 +614,22 @@ namespace Wagenheimer.PackageHub.Editor
             link.AddToClassList("hub-header-link");
             link.style.flexDirection = FlexDirection.Row;
             link.style.alignItems = Align.Center;
-            link.style.marginRight = marginRight;
+            link.style.flexShrink = 0;
+            link.style.marginRight = marginRight > 0 ? marginRight : 16;
+            link.style.marginBottom = 4;
             link.RegisterCallback<ClickEvent>(_ => Application.OpenURL(url));
 
             if (!string.IsNullOrEmpty(icon))
-                link.Add(CreateIconElement(icon));
+            {
+                var iconEl = CreateIconElement(icon);
+                iconEl.style.marginRight = 5;
+                iconEl.style.flexShrink = 0;
+                link.Add(iconEl);
+            }
 
             var label = new Label(text);
             label.pickingMode = PickingMode.Ignore;
+            label.style.flexShrink = 0;
             link.Add(label);
             return link;
         }
