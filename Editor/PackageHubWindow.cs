@@ -898,6 +898,7 @@ namespace Wagenheimer.PackageHub.Editor
             var card = new VisualElement();
             var isUpdating = item.IsUpdating;
             card.AddToClassList("hub-card");
+            card.style.flexShrink = 0;
             card.style.backgroundColor = new StyleColor(isFocused ? new Color(0.13f, 0.16f, 0.24f) : PackageHubUIStyle.ColCardBg);
             card.style.borderTopWidth = 1;
             card.style.borderBottomWidth = 1;
@@ -918,20 +919,30 @@ namespace Wagenheimer.PackageHub.Editor
             var header = new VisualElement();
             header.AddToClassList("hub-card-header");
             header.style.flexDirection = FlexDirection.Row;
-            header.style.alignItems = Align.Center;
+            header.style.flexWrap = Wrap.Wrap;
+            header.style.alignItems = Align.FlexStart;
             header.style.justifyContent = Justify.SpaceBetween;
             header.style.marginBottom = 6;
 
             var identity = new VisualElement();
             identity.AddToClassList("hub-card-identity");
             identity.style.flexDirection = FlexDirection.Row;
+            identity.style.flexWrap = Wrap.Wrap;
             identity.style.alignItems = Align.Center;
+            identity.style.flexGrow = 1;
+            identity.style.flexShrink = 1;
+            identity.style.minWidth = 180;
+            identity.style.marginRight = 8;
+            identity.style.marginBottom = 4;
 
             var titleLbl = new Label(item.DisplayName);
             titleLbl.AddToClassList("hub-card-title");
             titleLbl.style.fontSize = 14;
             titleLbl.style.unityFontStyleAndWeight = FontStyle.Bold;
             titleLbl.style.color = new StyleColor(PackageHubUIStyle.ColTextWhite);
+            titleLbl.style.flexShrink = 0;
+            titleLbl.style.marginRight = 8;
+            titleLbl.style.marginBottom = 2;
             identity.Add(titleLbl);
 
             var catBadge = new Label(item.Category);
@@ -952,7 +963,10 @@ namespace Wagenheimer.PackageHub.Editor
             catBadge.style.paddingRight = 7;
             catBadge.style.fontSize = 10;
             catBadge.style.color = new StyleColor(PackageHubUIStyle.ColTextMuted);
-            catBadge.style.marginLeft = 8;
+            catBadge.style.marginLeft = 0;
+            catBadge.style.marginRight = 6;
+            catBadge.style.marginBottom = 2;
+            catBadge.style.flexShrink = 0;
             identity.Add(catBadge);
 
             header.Add(identity);
@@ -961,7 +975,11 @@ namespace Wagenheimer.PackageHub.Editor
             var badgesRow = new VisualElement();
             badgesRow.AddToClassList("hub-card-badges");
             badgesRow.style.flexDirection = FlexDirection.Row;
+            badgesRow.style.flexWrap = Wrap.Wrap;
             badgesRow.style.alignItems = Align.Center;
+            badgesRow.style.alignSelf = Align.FlexStart;
+            badgesRow.style.flexShrink = 0;
+            badgesRow.style.marginBottom = 4;
 
             if (item.IsUpdating)
             {
@@ -992,7 +1010,10 @@ namespace Wagenheimer.PackageHub.Editor
             if (!string.IsNullOrEmpty(relTime))
             {
                 var timeBadge = PackageHubUIStyle.CreateBadge($"🕒 {relTime}", "hub-badge-time");
-                timeBadge.style.marginLeft = 6;
+                timeBadge.style.marginLeft = 0;
+                timeBadge.style.marginRight = 6;
+                timeBadge.style.marginBottom = 2;
+                timeBadge.style.flexShrink = 0;
                 badgesRow.Add(timeBadge);
             }
 
@@ -1004,8 +1025,8 @@ namespace Wagenheimer.PackageHub.Editor
             desc.AddToClassList("hub-card-desc");
             desc.style.fontSize = 11.5f;
             desc.style.color = new StyleColor(new Color(0.80f, 0.84f, 0.89f));
-            desc.style.marginTop = 4;
-            desc.style.marginBottom = 6;
+            desc.style.marginTop = 2;
+            desc.style.marginBottom = 8;
             desc.style.whiteSpace = WhiteSpace.Normal;
             card.Add(desc);
 
@@ -1013,21 +1034,30 @@ namespace Wagenheimer.PackageHub.Editor
             var metaRow = new VisualElement();
             metaRow.AddToClassList("hub-card-meta-row");
             metaRow.style.flexDirection = FlexDirection.Row;
+            metaRow.style.flexWrap = Wrap.Wrap;
             metaRow.style.alignItems = Align.Center;
             metaRow.style.justifyContent = Justify.SpaceBetween;
             metaRow.style.borderTopWidth = 1;
-            metaRow.style.borderTopColor = new StyleColor(new Color(1f, 1f, 1f, 0.05f));
+            metaRow.style.borderTopColor = new StyleColor(new Color(1f, 1f, 1f, 0.06f));
             metaRow.style.paddingTop = 8;
             metaRow.style.marginTop = 4;
 
             var leftMeta = new VisualElement();
+            leftMeta.AddToClassList("hub-card-left-meta");
             leftMeta.style.flexDirection = FlexDirection.Column;
+            leftMeta.style.flexGrow = 1;
+            leftMeta.style.flexShrink = 1;
+            leftMeta.style.minWidth = 180;
+            leftMeta.style.marginRight = 8;
+            leftMeta.style.marginBottom = 4;
 
             var idLabel = new Label(item.PackageId);
             idLabel.AddToClassList("hub-card-id");
-            idLabel.style.fontSize = 10;
-            idLabel.style.color = new StyleColor(new Color(0.45f, 0.50f, 0.60f));
+            idLabel.style.fontSize = 10.5f;
+            idLabel.style.color = new StyleColor(PackageHubUIStyle.ColTextMuted);
             idLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+            idLabel.style.flexShrink = 0;
+            idLabel.style.marginBottom = 2;
             leftMeta.Add(idLabel);
 
             // DASHBOARD SHORTCUTS FOR INSTALLED PACKAGE
@@ -1057,7 +1087,10 @@ namespace Wagenheimer.PackageHub.Editor
                     dashBtn.style.paddingLeft = 10;
                     dashBtn.style.paddingRight = 10;
                     dashBtn.style.fontSize = 11;
+                    dashBtn.style.marginLeft = 0;
                     dashBtn.style.marginRight = 6;
+                    dashBtn.style.marginBottom = 4;
+                    dashBtn.style.flexShrink = 0;
                     dashBtn.tooltip = $"Launch {dashInfo.PrimaryTitle} ({dashInfo.PrimaryDashboard.MenuItemPath})";
                     shortcutsRow.Add(dashBtn);
                 }
@@ -1078,7 +1111,10 @@ namespace Wagenheimer.PackageHub.Editor
                     secBtn.style.paddingLeft = 8;
                     secBtn.style.paddingRight = 8;
                     secBtn.style.fontSize = 10;
+                    secBtn.style.marginLeft = 0;
                     secBtn.style.marginRight = 4;
+                    secBtn.style.marginBottom = 4;
+                    secBtn.style.flexShrink = 0;
                     secBtn.tooltip = $"Open {sec.Title} ({sec.MenuItemPath})";
                     shortcutsRow.Add(secBtn);
                 }
@@ -1092,7 +1128,11 @@ namespace Wagenheimer.PackageHub.Editor
             var actions = new VisualElement();
             actions.AddToClassList("hub-card-actions");
             actions.style.flexDirection = FlexDirection.Row;
+            actions.style.flexWrap = Wrap.Wrap;
             actions.style.alignItems = Align.Center;
+            actions.style.flexShrink = 0;
+            actions.style.marginTop = 2;
+            actions.style.marginBottom = 4;
 
             if (item.IsUpdating)
             {
@@ -1103,7 +1143,10 @@ namespace Wagenheimer.PackageHub.Editor
                     null
                 );
                 busyBtn.SetEnabled(false);
+                busyBtn.style.marginLeft = 0;
                 busyBtn.style.marginRight = 6;
+                busyBtn.style.marginBottom = 4;
+                busyBtn.style.flexShrink = 0;
                 actions.Add(busyBtn);
             }
             else if (item.IsInstalled)
@@ -1132,7 +1175,10 @@ namespace Wagenheimer.PackageHub.Editor
                     {
                         updateBtn.tooltip = "Another package installation is currently in progress...";
                     }
+                    updateBtn.style.marginLeft = 0;
                     updateBtn.style.marginRight = 6;
+                    updateBtn.style.marginBottom = 4;
+                    updateBtn.style.flexShrink = 0;
                     actions.Add(updateBtn);
                 }
             }
@@ -1160,7 +1206,10 @@ namespace Wagenheimer.PackageHub.Editor
                 {
                     installBtn.tooltip = "Another package installation is currently in progress...";
                 }
+                installBtn.style.marginLeft = 0;
                 installBtn.style.marginRight = 6;
+                installBtn.style.marginBottom = 4;
+                installBtn.style.flexShrink = 0;
                 actions.Add(installBtn);
             }
 
@@ -1176,7 +1225,10 @@ namespace Wagenheimer.PackageHub.Editor
                         RenderActiveTab();
                     }
                 );
+                notesBtn.style.marginLeft = 0;
                 notesBtn.style.marginRight = 6;
+                notesBtn.style.marginBottom = 4;
+                notesBtn.style.flexShrink = 0;
                 actions.Add(notesBtn);
             }
 
@@ -1189,6 +1241,10 @@ namespace Wagenheimer.PackageHub.Editor
                     Application.OpenURL(item.RepoUrl);
                 }
             );
+            ghBtn.style.marginLeft = 0;
+            ghBtn.style.marginRight = 0;
+            ghBtn.style.marginBottom = 4;
+            ghBtn.style.flexShrink = 0;
             actions.Add(ghBtn);
 
             metaRow.Add(actions);
@@ -1206,6 +1262,7 @@ namespace Wagenheimer.PackageHub.Editor
                 notesContainer.style.paddingLeft = 12;
                 notesContainer.style.paddingRight = 12;
                 notesContainer.style.marginTop = 8;
+                notesContainer.style.flexShrink = 0;
 
                 var notesHeader = new Label($"Release Notes for v{item.LatestRemoteVersion ?? item.InstalledVersion}");
                 notesHeader.style.fontSize = 11;
@@ -1752,6 +1809,7 @@ namespace Wagenheimer.PackageHub.Editor
             var footer = new VisualElement();
             footer.AddToClassList("hub-footer");
             footer.style.flexDirection = FlexDirection.Row;
+            footer.style.flexWrap = Wrap.Wrap;
             footer.style.alignItems = Align.Center;
             footer.style.justifyContent = Justify.SpaceBetween;
             footer.style.backgroundColor = new StyleColor(PackageHubUIStyle.ColCardBg);
@@ -1763,56 +1821,96 @@ namespace Wagenheimer.PackageHub.Editor
             footer.style.borderBottomColor = new StyleColor(PackageHubUIStyle.ColCardBorder);
             footer.style.borderLeftColor = new StyleColor(PackageHubUIStyle.ColCardBorder);
             footer.style.borderRightColor = new StyleColor(PackageHubUIStyle.ColCardBorder);
-            footer.style.SetRadius(6);
-            footer.style.paddingTop = 6;
-            footer.style.paddingBottom = 6;
-            footer.style.paddingLeft = 12;
-            footer.style.paddingRight = 12;
+            footer.style.SetRadius(8);
+            footer.style.paddingTop = 7;
+            footer.style.paddingBottom = 7;
+            footer.style.paddingLeft = 14;
+            footer.style.paddingRight = 14;
             footer.style.marginTop = 10;
+            footer.style.flexShrink = 0;
 
-            var left = new Label($"Wagenheimer Package Hub v{_hubVersion} • Built with Unity UI Toolkit");
-            left.style.fontSize = 10.5f;
-            left.style.color = new StyleColor(new Color(0.45f, 0.50f, 0.60f));
-            footer.Add(left);
+            var leftContainer = new VisualElement();
+            leftContainer.style.flexDirection = FlexDirection.Row;
+            leftContainer.style.alignItems = Align.Center;
+            leftContainer.style.flexWrap = Wrap.Wrap;
+            leftContainer.style.flexShrink = 1;
+            leftContainer.style.marginRight = 12;
+            leftContainer.style.marginTop = 2;
+            leftContainer.style.marginBottom = 2;
+
+            var titleLabel = new Label($"Wagenheimer Package Hub v{_hubVersion}");
+            titleLabel.style.fontSize = 11f;
+            titleLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+            titleLabel.style.color = new StyleColor(PackageHubUIStyle.ColTextWhite);
+            titleLabel.style.flexShrink = 0;
+            leftContainer.Add(titleLabel);
+
+            var sep = new Label(" • ");
+            sep.style.fontSize = 11f;
+            sep.style.color = new StyleColor(new Color(0.35f, 0.40f, 0.50f));
+            sep.style.flexShrink = 0;
+            leftContainer.Add(sep);
+
+            var techLabel = new Label("Built with Unity UI Toolkit");
+            techLabel.style.fontSize = 11f;
+            techLabel.style.color = new StyleColor(PackageHubUIStyle.ColTextMuted);
+            techLabel.style.flexShrink = 0;
+            leftContainer.Add(techLabel);
+
+            footer.Add(leftContainer);
 
             var links = new VisualElement();
             links.AddToClassList("hub-footer-links");
             links.style.flexDirection = FlexDirection.Row;
+            links.style.flexWrap = Wrap.Wrap;
             links.style.alignItems = Align.Center;
+            links.style.flexShrink = 0;
+            links.style.marginTop = 2;
+            links.style.marginBottom = 2;
 
-            var b1 = PackageHubUIStyle.CreateButton("🌐 wagenheimer.com", "hub-btn-secondary", () =>
+            var b1 = PackageHubUIStyle.CreateButton("🌐 wagenheimer.com", "hub-footer-btn", () =>
             {
                 Application.OpenURL("https://wagenheimer.com");
             });
+            b1.AddToClassList("hub-footer-btn");
             b1.style.paddingTop = 3;
             b1.style.paddingBottom = 3;
-            b1.style.paddingLeft = 8;
-            b1.style.paddingRight = 8;
-            b1.style.fontSize = 10;
+            b1.style.paddingLeft = 10;
+            b1.style.paddingRight = 10;
+            b1.style.fontSize = 10.5f;
             b1.style.marginRight = 6;
+            b1.style.marginBottom = 2;
+            b1.style.flexShrink = 0;
             links.Add(b1);
 
-            var b2 = PackageHubUIStyle.CreateButton("GitHub ↗", "hub-btn-secondary", () =>
+            var b2 = PackageHubUIStyle.CreateButton("GitHub ↗", "hub-footer-btn", () =>
             {
                 Application.OpenURL("https://github.com/wagenheimer");
             });
+            b2.AddToClassList("hub-footer-btn");
             b2.style.paddingTop = 3;
             b2.style.paddingBottom = 3;
-            b2.style.paddingLeft = 8;
-            b2.style.paddingRight = 8;
-            b2.style.fontSize = 10;
+            b2.style.paddingLeft = 10;
+            b2.style.paddingRight = 10;
+            b2.style.fontSize = 10.5f;
             b2.style.marginRight = 6;
+            b2.style.marginBottom = 2;
+            b2.style.flexShrink = 0;
             links.Add(b2);
 
-            var b3 = PackageHubUIStyle.CreateButton("Unity UPM", "hub-btn-secondary", () =>
+            var b3 = PackageHubUIStyle.CreateButton("Unity UPM", "hub-footer-btn", () =>
             {
                 UnityEditor.PackageManager.UI.Window.Open("");
             });
+            b3.AddToClassList("hub-footer-btn");
             b3.style.paddingTop = 3;
             b3.style.paddingBottom = 3;
-            b3.style.paddingLeft = 8;
-            b3.style.paddingRight = 8;
-            b3.style.fontSize = 10;
+            b3.style.paddingLeft = 10;
+            b3.style.paddingRight = 10;
+            b3.style.fontSize = 10.5f;
+            b3.style.marginRight = 0;
+            b3.style.marginBottom = 2;
+            b3.style.flexShrink = 0;
             links.Add(b3);
 
             footer.Add(links);

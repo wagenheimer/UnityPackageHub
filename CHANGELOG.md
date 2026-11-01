@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.20] - 2026-11-01
+
+### Fixed
+- **Modern Responsive Footer & Package Cards**: Completely modernized the footer ("ultima linha") with sleek pill links (`.hub-footer-btn`), high-contrast crisp typography, responsive wrapping (`flexWrap = Wrap.Wrap`), and `flex-shrink: 0` protection against vertical collapse. Overhauled all package cards (`BuildPackageCard`) across installed and catalog tabs with flexible multi-line identity, wrapped badge containers, wrap-safe dashboard shortcuts, and resilient action buttons that never collide, overflow, or clip at any window width.
+
 ## [1.3.19] - 2026-11-01
 
 ### Fixed

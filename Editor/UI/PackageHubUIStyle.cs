@@ -418,6 +418,7 @@ namespace Wagenheimer.PackageHub.Editor
             badge.style.SetRadius(12);
             badge.style.fontSize = 10;
             badge.style.unityFontStyleAndWeight = FontStyle.Bold;
+            badge.style.flexShrink = 0;
             badge.style.borderTopWidth = 1;
             badge.style.borderBottomWidth = 1;
             badge.style.borderLeftWidth = 1;
@@ -472,6 +473,7 @@ namespace Wagenheimer.PackageHub.Editor
             var btn = new Button(onClick);
             ApplyIconText(btn, text);
             btn.AddToClassList("hub-btn");
+            btn.style.flexShrink = 0;
             btn.style.SetRadius(5);
             btn.style.paddingTop = 5;
             btn.style.paddingBottom = 5;
