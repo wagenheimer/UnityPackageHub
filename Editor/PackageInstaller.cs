@@ -34,6 +34,18 @@ namespace Wagenheimer.PackageHub.Editor
                 return;
             }
 
+            // A legacy Assets/I2 and com.wagenheimer.i2localization define the same I2.Loc types:
+            // the package can only be added after the old source is gone. The Hub is already
+            // loaded, so this is the one place where the migration can run safely.
+            var migration = I2LegacyMigration.Prepare(item);
+            if (migration is I2MigrationOutcome.Cancelled or I2MigrationOutcome.Failed)
+            {
+                callback?.Invoke(false, migration == I2MigrationOutcome.Cancelled
+                    ? "Cancelled: the legacy I2 source must be migrated before installing the package."
+                    : "The legacy I2 migration failed; see the Console.");
+                return;
+            }
+
             var gitUrl = item.GitUrl;
             var ver = !string.IsNullOrEmpty(targetVersion) ? targetVersion : item.LatestRemoteVersion;
 

@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-11-02
+
+### Added
+- **I2 Localization preflight.** Before installing/updating `com.wagenheimer.i2localization`, the Hub detects a legacy `Assets/I2`, backs it up to `I2MigrationBackup/`, moves `I2Languages` to `Assets/Resources/`, deletes only the old I2 scripts and removes the deprecated `com.wagenheimer.i2localization.migrator` from the manifest. Installing the package over the legacy copy used to break compilation (duplicate `I2.Loc` types) before any script could fix it.
+
 ## [1.3.20] - 2026-11-01
 
 ### Fixed
