@@ -816,3 +816,32 @@
     border-color: #38BDF8;
     color: #FFFFFF;
 }
+
+/* ---------------- UPDATE PROGRESS POPUP ---------------- */
+.hub-update-popup-root {
+    flex-grow: 1;
+    background-color: #12141A;
+    color: #F1F5F9;
+    padding: 14px 16px;
+    font-size: 12px;
+}
+
+.hub-update-card {
+    background-color: #1A1D26;
+    border-color: #2D3342;
+    border-width: 1px;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    border-left-width: 4px;
+    border-left-color: #38BDF8;
+}
+
+.hub-log-terminal {
+    background-color: #0A0B0F;
+    border-color: #222734;
+    border-width: 1px;
+    border-radius: 6px;
+    padding: 8px 10px;
+}
+

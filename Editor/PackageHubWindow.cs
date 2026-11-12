@@ -31,7 +31,7 @@ namespace Wagenheimer.PackageHub.Editor
         private List<PackageItem> _allPackages = new List<PackageItem>();
         private bool _isCheckingAll = false;
         private string _targetPackageFocus = null;
-        private string _hubVersion = "1.1.0";
+        private string _hubVersion = "1.5.0";
         private bool _migrationBannerDismissed;
 
         private VisualElement _contentContainer;
@@ -61,6 +61,12 @@ namespace Wagenheimer.PackageHub.Editor
         {
             var win = OpenHub();
             win.CheckAllUpdates();
+        }
+
+        [MenuItem("Tools/Wagenheimer/Package Updates Progress...", priority = 2)]
+        public static void ShowUpdatesProgressMenu()
+        {
+            PackageUpdateProgressWindow.ShowWindow(true);
         }
 
         [MenuItem("Tools/Wagenheimer/Visit wagenheimer.com ↗", priority = 300)]
@@ -163,6 +169,11 @@ namespace Wagenheimer.PackageHub.Editor
 
         private void HandleInstallStateChanged()
         {
+            var session = PackageUpdateSession.GetCurrentSession();
+            if (session != null && session.IsFinished)
+            {
+                RefreshPackages(false);
+            }
             RebuildHeader();
             RebuildMetrics();
             RenderActiveTab();
@@ -1945,7 +1956,7 @@ namespace Wagenheimer.PackageHub.Editor
 
             PackageInstaller.UpdateAll(outdated, () =>
             {
-                RefreshPackages(false);
+                RefreshPackages(true);
                 RebuildHeader();
                 RebuildMetrics();
                 RenderActiveTab();
@@ -1980,7 +1991,7 @@ namespace Wagenheimer.PackageHub.Editor
             {
                 // Ignore, use fallback
             }
-            _hubVersion = "1.1.0";
+            _hubVersion = "1.5.0";
         }
 
         #endregion

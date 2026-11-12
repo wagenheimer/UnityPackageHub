@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-11-12
+
+### Added
+- **Visual Real-Time Auto-Update Progress Popup (`PackageUpdateProgressWindow`)**:
+  - Dedicated modern modal-like window displaying real-time progress for package updates and auto-updates.
+  - Granular, itemized tracking for every package: `Pending` (⏳ Aguardando), `Updating` (🔄 Atualizando com animação), `Verifying` (🔍 Validando integridade), `Success` (✅ Verificado em disco) e `Failed` (❌ Falha com detalhes).
+  - Overall progress bar with animated braille spinner and percent completion.
+  - Interactive activity log console with real-time UPM and Git operation timestamps and "Copiar Logs" button.
+  - "Tentar Novamente (Falhas)" button to re-run only the packages that failed.
+  - Menu item `Tools > Wagenheimer > Package Updates Progress...` to monitor or review the latest update session at any time.
+
+### Fixed
+- **Domain Reload Queue Drop & Lockfile Hash Invalidation (`PackageUpdateSession`)**:
+  - Fixed issue where updating multiple packages sequentially resulted in dropped updates: Unity domain reloads previously wiped in-memory queues, falsely reporting completion.
+  - Sessions now persist across Unity domain reloads and assembly recompilations via `UnityEditor.SessionState` and disk backup.
+  - Strict disk-level verification: packages are only marked as `Success` after inspecting `package.json` in `PackageCache` or `Packages/` to confirm that the installed version actually matches the target version.
+  - Stale git hashes are automatically removed from `Packages/packages-lock.json` before resolution so Unity does not reuse obsolete cached commits.
+  - Multiple package updates are now resolved in a single atomic UPM batch pass instead of triggering repeated disruptive recompilations.
+
 ## [1.4.0] - 2026-11-02
 
 ### Added

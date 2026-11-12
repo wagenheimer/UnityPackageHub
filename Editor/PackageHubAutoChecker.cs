@@ -14,6 +14,7 @@ namespace Wagenheimer.PackageHub.Editor
 
         static PackageHubAutoChecker()
         {
+            GoogleDependencyManager.HealPackageCacheOrphanMetas();
             EditorApplication.delayCall += OnEditorReady;
         }
 

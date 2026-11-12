@@ -27,6 +27,56 @@ namespace Wagenheimer.PackageHub.Editor
         public const string ManifestPath = "Packages/manifest.json";
         public const string LockfilePath = "Packages/packages-lock.json";
 
+        /// <summary>
+        /// Google's official Git repositories (com.google.play.common, core, review) and older package versions
+        /// sometimes ship with orphan LICENSE.md.meta, README.md.meta or build.log.meta without the actual files,
+        /// causing Unity to spam immutable folder errors on startup. This safely touches empty placeholders
+        /// in Library/PackageCache so Unity's asset database stays completely clean and error-free.
+        /// </summary>
+        public static void HealPackageCacheOrphanMetas()
+        {
+            try
+            {
+                var packageCache = Path.Combine("Library", "PackageCache");
+                if (!Directory.Exists(packageCache)) return;
+
+                // 1. Heal Google Play packages
+                var googleDirs = Directory.GetDirectories(packageCache, "com.google.play.*");
+                foreach (var dir in googleDirs)
+                {
+                    TouchIfMetaExists(dir, "LICENSE.md");
+                    TouchIfMetaExists(dir, "README.md");
+                }
+
+                // 2. Heal BuildPipeline packages
+                var bpDirs = Directory.GetDirectories(packageCache, "com.wagenheimer.buildpipeline*");
+                foreach (var dir in bpDirs)
+                {
+                    TouchIfMetaExists(dir, "build.log");
+                    var logsDir = Path.Combine(dir, "Logs");
+                    if (File.Exists(Path.Combine(logsDir, "upm.log.meta")) && !File.Exists(Path.Combine(logsDir, "upm.log")))
+                    {
+                        if (!Directory.Exists(logsDir)) Directory.CreateDirectory(logsDir);
+                        File.WriteAllText(Path.Combine(logsDir, "upm.log"), "# upm log\n");
+                    }
+                }
+            }
+            catch
+            {
+                // Non-critical background heal
+            }
+        }
+
+        private static void TouchIfMetaExists(string dir, string fileName)
+        {
+            var metaPath = Path.Combine(dir, fileName + ".meta");
+            var filePath = Path.Combine(dir, fileName);
+            if (File.Exists(metaPath) && !File.Exists(filePath))
+            {
+                File.WriteAllText(filePath, $"# {fileName}\n");
+            }
+        }
+
         public sealed class GooglePackageDef
         {
             public string Id { get; }
