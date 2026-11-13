@@ -31,7 +31,7 @@ namespace Wagenheimer.PackageHub.Editor
         private List<PackageItem> _allPackages = new List<PackageItem>();
         private bool _isCheckingAll = false;
         private string _targetPackageFocus = null;
-        private string _hubVersion = "1.5.0";
+        private string _hubVersion = "1.5.1";
         private bool _migrationBannerDismissed;
 
         private VisualElement _contentContainer;
@@ -1991,7 +1991,7 @@ namespace Wagenheimer.PackageHub.Editor
             {
                 // Ignore, use fallback
             }
-            _hubVersion = "1.5.0";
+            _hubVersion = "1.5.1";
         }
 
         #endregion

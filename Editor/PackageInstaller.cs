@@ -117,7 +117,7 @@ namespace Wagenheimer.PackageHub.Editor
             PackageUpdateProgressWindow.ShowWindow(true);
             NotifyInstallStateChanged();
 
-            PackageUpdateSession.ExecuteBatchUpdate(session, (success, err) =>
+            PackageUpdateSession.ScheduleBatchUpdate(session, (success, err) =>
             {
                 NotifyInstallStateChanged();
                 callback?.Invoke(success, err);
@@ -156,7 +156,7 @@ namespace Wagenheimer.PackageHub.Editor
             PackageUpdateProgressWindow.ShowWindow(true);
             NotifyInstallStateChanged();
 
-            PackageUpdateSession.ExecuteBatchUpdate(session, (success, err) =>
+            PackageUpdateSession.ScheduleBatchUpdate(session, (success, err) =>
             {
                 NotifyInstallStateChanged();
                 onAllCompleted?.Invoke();
@@ -190,7 +190,7 @@ namespace Wagenheimer.PackageHub.Editor
             PackageUpdateProgressWindow.ShowWindow(true);
             NotifyInstallStateChanged();
 
-            PackageUpdateSession.ExecuteBatchUpdate(session, (success, err) =>
+            PackageUpdateSession.ScheduleBatchUpdate(session, (success, err) =>
             {
                 NotifyInstallStateChanged();
                 onComplete?.Invoke();

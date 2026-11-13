@@ -33,11 +33,12 @@ namespace Wagenheimer.PackageHub.Editor
         [MenuItem("Tools/Wagenheimer/Package Updates Progress...", priority = 2)]
         public static PackageUpdateProgressWindow ShowWindow(bool focus = true)
         {
-            var win = GetWindow<PackageUpdateProgressWindow>("Package Updates");
+            var win = GetWindow<PackageUpdateProgressWindow>(false, "Package Updates", focus);
             win.minSize = new Vector2(MinWindowWidth, MinWindowHeight);
-            EditorWindowPlacement.EnsureOnScreen(win, new Vector2(MinWindowWidth, MinWindowHeight), new Vector2(DefaultWindowWidth, DefaultWindowHeight));
+            EditorWindowPlacement.Center(win, new Vector2(MinWindowWidth, MinWindowHeight), new Vector2(DefaultWindowWidth, DefaultWindowHeight));
             win.Show();
             if (focus) win.Focus();
+            win.RebuildAll();
             return win;
         }
 
@@ -51,6 +52,7 @@ namespace Wagenheimer.PackageHub.Editor
         {
             PackageUpdateSession.OnSessionUpdated += HandleSessionUpdated;
             EditorApplication.update += OnEditorUpdate;
+            EditorWindowPlacement.Center(this, new Vector2(MinWindowWidth, MinWindowHeight), new Vector2(DefaultWindowWidth, DefaultWindowHeight));
             BuildUI();
         }
 
@@ -93,7 +95,16 @@ namespace Wagenheimer.PackageHub.Editor
 
             if (_progressStatusLabel != null)
             {
-                _progressStatusLabel.text = $"{spinner} Processando UPM e compilando dependências...";
+                if (EditorApplication.isCompiling)
+                {
+                    _progressStatusLabel.text = $"{spinner} Compilando dependências e importando pacotes no Unity...";
+                    _progressStatusLabel.style.color = new StyleColor(PackageHubUIStyle.ColAmber);
+                }
+                else
+                {
+                    _progressStatusLabel.text = $"{spinner} Processando UPM e resolvendo dependências...";
+                    _progressStatusLabel.style.color = new StyleColor(PackageHubUIStyle.ColAccent);
+                }
             }
 
             if (_progressFill != null)
@@ -269,10 +280,18 @@ namespace Wagenheimer.PackageHub.Editor
             }
             else if (isRunning)
             {
-                statusText = $"{SpinnerFrames[_spinnerIndex % SpinnerFrames.Length]} Atualizando pacotes via Unity Package Manager...";
+                if (EditorApplication.isCompiling)
+                {
+                    statusText = $"{SpinnerFrames[_spinnerIndex % SpinnerFrames.Length]} Compilando dependências e importando pacotes no Unity...";
+                    barColor = PackageHubUIStyle.ColAmber;
+                }
+                else
+                {
+                    statusText = $"{SpinnerFrames[_spinnerIndex % SpinnerFrames.Length]} Atualizando pacotes via Unity Package Manager...";
+                    barColor = PackageHubUIStyle.ColAccent;
+                }
                 pctText = total > 0 ? $"{completed}/{total} concluído(s)" : "Processando...";
                 fillPct = total > 0 ? Mathf.Max(12f, (float)completed / total * 100f) : _pulseWidth;
-                barColor = PackageHubUIStyle.ColAccent;
             }
             else
             {

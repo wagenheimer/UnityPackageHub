@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2026-11-13
+
+### Fixed
+- **Instant Center Placement & Visual Deferral Before Recompilation**:
+  - The update popup window now force-centers in the active Unity editor display (`EditorWindowPlacement.Center`), ensuring it never opens off-center or clipped.
+  - Implemented multi-frame staged execution (`ScheduleBatchUpdate`): the window is now fully laid out, rendered, and populated with package cards, badges, and progress bar *before* UPM file writes and Unity script compilation freeze the main thread, eliminating the white/unpainted window bug.
+  - Added live status detection for `EditorApplication.isCompiling` so the progress indicator explicitly displays compilation and asset import activity.
+
 ## [1.5.0] - 2026-11-12
 
 ### Added

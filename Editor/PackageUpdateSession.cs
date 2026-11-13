@@ -474,6 +474,53 @@ namespace Wagenheimer.PackageHub.Editor
         }
 
         /// <summary>
+        /// Schedules the batch update with a brief visual deferral so the UI window is fully
+        /// centered, laid out, and painted on screen before file I/O and Unity compilation freeze the main thread.
+        /// </summary>
+        public static void ScheduleBatchUpdate(PackageUpdateSessionData session, Action<bool, string> onComplete = null)
+        {
+            if (session == null || session.Items == null || session.Items.Count == 0)
+            {
+                onComplete?.Invoke(false, "Nenhum pacote para atualizar.");
+                return;
+            }
+
+            session.IsActive = true;
+            session.IsFinished = false;
+            SaveSession(session);
+            OnSessionUpdated?.Invoke();
+
+            double startTime = EditorApplication.timeSinceStartup;
+            int step = 0;
+
+            void StepExecution()
+            {
+                double elapsed = EditorApplication.timeSinceStartup - startTime;
+
+                if (step == 0 && elapsed >= 0.18)
+                {
+                    step = 1;
+                    AddLog("Preparando arquivos de manifesto e limpando caches...");
+                    foreach (var it in session.Items)
+                    {
+                        it.Status = UpdateItemStatus.Updating;
+                        it.StatusDetail = $"Configurando especificação v{it.TargetVersion}...";
+                    }
+                    SaveSession(session);
+                    OnSessionUpdated?.Invoke();
+                }
+                else if (step == 1 && elapsed >= 0.40)
+                {
+                    step = 2;
+                    EditorApplication.update -= StepExecution;
+                    ExecuteBatchUpdate(session, onComplete);
+                }
+            }
+
+            EditorApplication.update += StepExecution;
+        }
+
+        /// <summary>
         /// Executes batch update by updating manifest.json, clearing lockfile hashes, and calling Client.Resolve().
         /// </summary>
         public static bool ExecuteBatchUpdate(PackageUpdateSessionData session, Action<bool, string> onComplete = null)
