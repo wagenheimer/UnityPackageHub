@@ -30,7 +30,8 @@ namespace Wagenheimer.PackageHub.Editor
         private Label _progressPercentLabel;
         private VisualElement _progressFill;
 
-        [MenuItem("Tools/Wagenheimer/Package Updates Progress...", priority = 2)]
+        // Unity only accepts [MenuItem] methods with no parameters or a single MenuCommand:
+        // the menu entry lives in PackageHubWindow.ShowUpdatesProgressMenu (same path).
         public static PackageUpdateProgressWindow ShowWindow(bool focus = true)
         {
             var win = GetWindow<PackageUpdateProgressWindow>(false, "Package Updates", focus);
